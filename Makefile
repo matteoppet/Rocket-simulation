@@ -7,7 +7,7 @@ SRC_DIR_C_FILES = src/c_scripts
 LIB_DIR = lib
 
 # Source files and corresponding DLL names (in the subdirectory)
-SRC_FILES = $(SRC_DIR_C_FILES)/physics.c
+SRC_FILES = $(SRC_DIR_C_FILES)/rocket_physics.c
 DLL_FILES = $(LIB_DIR)/physics.dll
 
 # Python script to run (in the subdirectory)

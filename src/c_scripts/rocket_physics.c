@@ -1,21 +1,22 @@
 #include <math.h>
+#include <stdio.h>
 
 #define M_PI 3.14159265358979323846
 
 void update_acceleration(double mass, double main_thrust, double drag_coeff, double gravity, double angle, double h_v, double v_v, double *h_a, double *v_a) {
     // convert angles to radians
-    double radians = angle * (M_PI/180);
+    double radians = angle * (M_PI/180.0);
 
     // split thrust
     double thrust_x = main_thrust * cos(radians);
     double thrust_y = main_thrust * sin(radians);
 
-    double drag_force_horizontally = drag_coeff * h_v * h_v;
-    double drag_force_vertically = drag_coeff * v_v * v_v;
+    double drag_force_horizontally = drag_coeff * h_v * fabs(h_v);
+    double drag_force_vertically = drag_coeff * v_v * fabs(v_v);
 
     // update horizontal acceleration
-    *h_a = (thrust_x-drag_force_horizontally)/mass;
-    *v_a = (thrust_y-drag_force_vertically/mass)-gravity;
+    *h_a = (thrust_x - drag_force_horizontally) / mass;
+    *v_a = (thrust_y - drag_force_vertically) / mass - gravity;
 }
 
 

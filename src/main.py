@@ -8,11 +8,10 @@ pygame.init()
 screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
 clock = pygame.time.Clock()
 running = True
+pygame.font.init()
 
 FLOOR = Floor(WINDOW_WIDTH, WINDOW_HEIGHT)
 ROCKET = Rocket(FLOOR.y)
-
-GRAVITY = 9.81
 
 while running:
     for event in pygame.event.get():
@@ -22,12 +21,15 @@ while running:
     screen.fill(BACKGROUND_COLOR)
 
     FLOOR.draw(screen)
-    ROCKET.draw(screen)
+
+    # calculate delta time
+    dt = clock.tick(60)/1000.0
 
     ROCKET.controls()
-    ROCKET.rotate()
-    ROCKET.update_position(clock.tick(60)/1000.0, GRAVITY)
-    ROCKET.debug()
+    ROCKET.update_variables(dt, GRAVITY)
+    ROCKET.debug(screen)
+
+    ROCKET.render(screen, dt)
 
     pygame.display.flip()
     clock.tick(60)
