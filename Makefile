@@ -19,10 +19,13 @@ CFLAGS = -shared -fPIC -o
 # Default target: Compile all DLLs and run the Python script
 all: $(DLL_FILES) run
 
-# Compile each C file into its corresponding DLL
-$(LIB_DIR)/%.dll: $(SRC_DIR_C_FILES)/%.c
-	@mkdir -p $(LIB_DIR)
-	$(CC) $< $(CFLAGS) $@
+# Only compile the DLL if it doesn't exist
+$(DLL_FILES): $(SRC_FILES)
+	@if [ ! -f $@ ]; then \
+		echo "Compiling $@ because it doesn't exist."; \
+		@mkdir -p $(LIB_DIR); \
+		$(CC) $(SRC_FILES) $(CFLAGS) $(DLL_FILES); \
+	fi
 
 # Run the Python script
 run: $(DLL_FILES)
