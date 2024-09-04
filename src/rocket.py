@@ -138,13 +138,14 @@ class Rocket(sprite.Sprite):
                 int(self.image.get_width() * zoom_factor),
                 int(self.image.get_height() * zoom_factor)
             ))
-        rocket_scaled_image = transform.rotate(rocket_scaled_image, self.angle)
-
         # calculate offset
-        rocket_offset_pos = (self.rect.topleft - offset) * zoom_factor
+        rocket_offset_pos = (self.rect.center - offset) * zoom_factor
+
+        rotated_image = transform.rotate(rocket_scaled_image, self.angle)
+        rotated_rect = rotated_image.get_rect(center=rocket_offset_pos)
 
         # blit image
-        screen.blit(rocket_scaled_image, rocket_offset_pos)
+        screen.blit(rotated_image, rotated_rect)
 
 
     def reset(self):

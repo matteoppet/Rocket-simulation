@@ -26,6 +26,11 @@ while running:
         if event.type == TIMEREVENT:
             ROCKET.t_minus += 1
             pygame.time.set_timer(TIMEREVENT, 1000)
+        if event.type == pygame.MOUSEWHEEL:
+            if event.y >= 1:
+                visible_sprites.increase_decrease_zoom("increase")
+            if event.y <= -1:
+                visible_sprites.increase_decrease_zoom("decrease")
 
     # draw everything
     screen.fill(BACKGROUND_COLOR)

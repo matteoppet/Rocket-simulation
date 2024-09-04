@@ -11,6 +11,7 @@ class World():
 
 
     def render(self, screen, offset, zoom_factor):
+
         terrain_offset_position = (self.rect.topleft - offset) * zoom_factor
         terrain_scaled_image = transform.scale(
             self.image,
@@ -68,3 +69,12 @@ class YSortCameraGroup(sprite.Group):
     def calculate_offset(self, rocket):
         self.offset.x = rocket.rect.centerx - self.half_width / self.zoom_factor
         self.offset.y = rocket.rect.centery - self.half_height / self.zoom_factor
+
+
+    def increase_decrease_zoom(self, type):
+        if type == "increase":
+            if self.zoom_factor != 6:
+                self.zoom_factor += 1
+        if type == "decrease":
+            if self.zoom_factor != 1:
+                self.zoom_factor -= 1
