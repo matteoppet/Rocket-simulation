@@ -1,31 +1,47 @@
 from pygame import sprite, Rect, Surface, Vector2, display, transform
 from settings import *
 
-class Terrain(sprite.Sprite):
-    def __init__(self, window_width, window_height, group):
-        super().__init__(group)
-        sprite.Sprite.__init__(self)
-                                    
-        self.size = (window_width, window_height/4)
-        self.position = Vector2(0, window_height-self.size[1])
-        self.color = "dark green"
 
-        self.image = Surface(self.size)
-        self.rect = Rect(self.position, self.size)
-        self.image.fill(self.color)
-
-
+class World():
     def collisions(self, sprite_1, sprite_2):
         if sprite_1.rect.colliderect(sprite_2):
             if not sprite_1.on_platform:
                 sprite_1.collision = True
                 sprite_1.reset()
 
-    def draw(self, screen, offset, zoom_factor):
-        offset_rect = (self.rect.topleft - offset) * zoom_factor
-        screen.blit(self.image, self.rect)
+
+    def render(self, screen, offset, zoom_factor):
+        terrain_offset_position = (self.rect.topleft - offset) * zoom_factor
+        terrain_scaled_image = transform.scale(
+            self.image,
+            (int(self.image.get_width() * zoom_factor),
+             int(self.image.get_height() * zoom_factor)))
+        
+        self.position = terrain_offset_position
+        screen.blit(terrain_scaled_image, terrain_offset_position)
 
 
+class Earth(World, sprite.Sprite):
+    def __init__(self, WINDOW_WIDTH, WINDOW_HEIGHT, group):
+        sprite.Sprite.__init__(self)
+        super().__init__(group)
+
+        self.name = "earth"
+
+        # ! SPECIFICS WORLD
+        self.drag_coeff = 0.1
+        self.gravity = 9.81
+        self.color_terrain = "dark green"
+
+        # setup sprite terrain
+        self.position = Vector2(1000, 1000)
+        self.size = Vector2(5000, WINDOW_HEIGHT/4)
+
+        self.image = Surface(self.size)
+        self.rect = Rect(self.position, self.size)
+        self.image.fill(self.color_terrain)
+
+    
 
 class YSortCameraGroup(sprite.Group):
     def __init__(self):
@@ -38,24 +54,17 @@ class YSortCameraGroup(sprite.Group):
         self.zoom_factor = 1
 
 
-    def custom_draw(self, rocket, terrain):
-        self.offset.x = rocket.rect.centerx - self.half_width / self.zoom_factor
-        self.offset.y = rocket.rect.centery - self.half_height / self.zoom_factor
+    def custom_draw(self, rocket, world):
+        # calculate offset
+        self.calculate_offset(rocket)
 
         # draw terrain
-        # terrain.draw(self.display_surface, self.offset, self.zoom_factor)
-        terrain_offset_position = (terrain.rect.topleft - self.offset) * self.zoom_factor
-        terrain_scaled_image = transform.scale(
-            terrain.image,
-            (int(terrain.image.get_width() * self.zoom_factor),
-             int(terrain.image.get_height() * self.zoom_factor)))
-        self.display_surface.blit(terrain_scaled_image, terrain_offset_position)
+        world.render(self.display_surface, self.offset, self.zoom_factor)
 
         # draw rocket
-        rocket_offset_pos = (rocket.rect.topleft - self.offset) * self.zoom_factor
-        rocket_scaled_image = transform.scale(
-            rocket.image,
-            (int(rocket.image.get_width() * self.zoom_factor),
-             int(rocket.image.get_height() * self.zoom_factor)))
-        rocket_scaled_image = transform.rotate(rocket_scaled_image, rocket.angle)
-        self.display_surface.blit(rocket_scaled_image, rocket_offset_pos)
+        rocket.render(self.display_surface, self.offset, self.zoom_factor)
+
+
+    def calculate_offset(self, rocket):
+        self.offset.x = rocket.rect.centerx - self.half_width / self.zoom_factor
+        self.offset.y = rocket.rect.centery - self.half_height / self.zoom_factor

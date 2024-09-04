@@ -16,7 +16,7 @@ void update_acceleration(double mass, double main_thrust, double drag_coeff, dou
 
     // update horizontal acceleration
     *h_a = (thrust_x - drag_force_horizontally) / mass;
-    *v_a = (thrust_y - drag_force_vertically) / mass - gravity;
+    *v_a = ((thrust_y - drag_force_vertically) / mass) - gravity;
 }
 
 

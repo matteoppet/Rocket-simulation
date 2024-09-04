@@ -1,6 +1,6 @@
 import pygame
 
-from world import Terrain, YSortCameraGroup
+from world import Earth, YSortCameraGroup
 from rocket import Rocket
 from settings import *
 
@@ -11,10 +11,11 @@ running = True
 pygame.font.init()
 
 visible_sprites = YSortCameraGroup()
-TERRAIN = Terrain(WINDOW_WIDTH, WINDOW_HEIGHT, visible_sprites)
-ROCKET = Rocket(TERRAIN.position.y, visible_sprites)
-
-
+worlds_sprite = pygame.sprite.Group()
+EARTH = Earth(WINDOW_WIDTH, WINDOW_HEIGHT, [visible_sprites, worlds_sprite])
+ROCKET = Rocket(EARTH, visible_sprites)
+ 
+CURRNET_PLANET = "earth"
 
 TIMEREVENT = pygame.USEREVENT + 1
 
@@ -26,20 +27,21 @@ while running:
             ROCKET.t_minus += 1
             pygame.time.set_timer(TIMEREVENT, 1000)
 
+    # draw everything
     screen.fill(BACKGROUND_COLOR)
 
-    # calculate delta time
-    dt = clock.tick(60)/1000.0
+    for world in worlds_sprite:
+        if world.name == CURRNET_PLANET:
+            visible_sprites.custom_draw(ROCKET, world)
 
-    TERRAIN.collisions(ROCKET, TERRAIN)
+            # calculate everything
+            dt = clock.tick(60)/1000.0
 
-    ROCKET.controls(TIMEREVENT)
-    ROCKET.current_state(dt, GRAVITY, ROCKET.position)
-    ROCKET.debug(screen)
+            world.collisions(ROCKET, world)
+            ROCKET.controls(TIMEREVENT)
+            ROCKET.current_state(dt)
+            ROCKET.debug(screen)
 
-    visible_sprites.custom_draw(ROCKET, TERRAIN)
-
-    print(clock.get_fps())
 
     pygame.display.flip()
     clock.tick(60)
