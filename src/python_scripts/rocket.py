@@ -5,6 +5,7 @@ import math
 from numpy import linalg # type: ignore
 
 
+
 class Rocket(sprite.Sprite):
     def __init__(self, world, group):
         super().__init__(group)
@@ -14,7 +15,7 @@ class Rocket(sprite.Sprite):
 
         # setup rocket
         self.size = (10, 80)
-        self.position = Vector2(self.world.size[0]/2, self.world.position.y-self.size[1])
+        self.position = Vector2(150,0)
 
         self.image = image.load('assets/prototype_2.png').convert_alpha()
         self.copy_image = self.image.copy()
@@ -90,7 +91,10 @@ class Rocket(sprite.Sprite):
         self.speed = math.sqrt(self.vertical_vel.value**2+self.horizontal_vel.value**2)
 
         # calculate distance from terrain
-        self.altitude = self.world.rect.topleft[1] - self.rect.bottomleft[1]
+        try:
+            self.altitude = self.world.rect.topleft[1] - self.rect.bottomleft[1]
+        except AttributeError:
+            self.altitude = 0
         
         # update on_platform variable when applying thrust
         if self.on_platform:
@@ -165,7 +169,7 @@ class Rocket(sprite.Sprite):
         self.t_minus = 0
 
 
-    def debug(self, screen):
+    def debug(self, screen, clock):
         text_accelerations = self.fontt.render(f'Acceleration: h:{round(self.horizontal_acc.value, 3)}, v:{round(self.vertical_acc.value, 3)}', False, "black")
         text_velocities = self.fontt.render(f'Velocity: h:{round(self.horizontal_vel.value,3)}, v:{round(self.vertical_vel.value,3)}', False, "black")
         text_thrust = self.fontt.render(f'Thrust: {self.thrust_percentage}', False, "black")
@@ -173,6 +177,7 @@ class Rocket(sprite.Sprite):
         text_altitude = self.fontt.render(f'Altitude: {self.altitude}m', False, "black")
         text_speed = self.fontt.render(f"Velocity: {round(self.speed,1)} m/s", False, "black")
         text_time = self.fontt.render(f"T-minus: {self.t_minus}s", False, "black")
+        text_fps = self.fontt.render(f"FPS: {round(clock.get_fps(),1)}", False, "black")
 
         starting_y = 20
         starting_x = 20
@@ -184,3 +189,7 @@ class Rocket(sprite.Sprite):
         screen.blit(text_altitude, (starting_x, starting_y+100))
         screen.blit(text_speed, (starting_x, starting_y+120))
         screen.blit(text_time, (starting_x, starting_y+140))
+        screen.blit(text_fps, (starting_x, starting_y+160))
+
+
+# describe the laws using in physics to move the rocket in the README, study the law VERY WELL

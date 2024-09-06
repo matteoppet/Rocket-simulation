@@ -1,8 +1,9 @@
 import pygame
 
-from world import Earth, YSortCameraGroup
-from rocket import Rocket
-from settings import *
+from python_scripts.world import General_world, Earth, YSortCameraGroup
+from python_scripts.rocket import Rocket
+from python_scripts.settings import *
+from python_scripts.helpers import collision
 
 pygame.init()
 screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
@@ -12,10 +13,10 @@ pygame.font.init()
 
 visible_sprites = YSortCameraGroup()
 worlds_sprite = pygame.sprite.Group()
-EARTH = Earth(WINDOW_WIDTH, WINDOW_HEIGHT, [visible_sprites, worlds_sprite])
+EARTH = Earth((WINDOW_WIDTH, WINDOW_HEIGHT))
 ROCKET = Rocket(EARTH, visible_sprites)
  
-CURRNET_PLANET = "earth"
+CURRENT_PLANET = "earth"
 
 TIMEREVENT = pygame.USEREVENT + 1
 
@@ -32,20 +33,17 @@ while running:
             if event.y <= -1:
                 visible_sprites.increase_decrease_zoom("decrease")
 
-    # draw everything
-    screen.fill(BACKGROUND_COLOR)
 
-    for world in worlds_sprite:
-        if world.name == CURRNET_PLANET:
-            visible_sprites.custom_draw(ROCKET, world)
+    visible_sprites.custom_draw(ROCKET, EARTH)
 
-            # calculate everything
-            dt = clock.tick(60)/1000.0
+    # calculate everything
+    dt = clock.tick(60)/1000.0
 
-            world.collisions(ROCKET, world)
-            ROCKET.controls(TIMEREVENT)
-            ROCKET.current_state(dt)
-            ROCKET.debug(screen)
+    ROCKET.controls(TIMEREVENT)
+    ROCKET.current_state(dt)
+    ROCKET.debug(screen, clock)
+
+    # collision(ROCKET, world)
 
 
     pygame.display.flip()
