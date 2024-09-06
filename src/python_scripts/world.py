@@ -29,8 +29,6 @@ class General_world():
 
 
     def render_terrain(self, screen, offset, zoom_factor):
-        self.font = font.SysFont("Helvetica", 18)
-
         # calculate offset
         for terrain in self.stack_terrain:
             image_offset, position_offset = self.calculate_offset_terrain(offset, zoom_factor, terrain)
@@ -67,6 +65,10 @@ class General_world():
         # right
         if rocket.position.x > self.stack_terrain.sprites()[1].rect.centerx:
             self.stack_terrain.sprites()[0].kill()
+
+            for sprite in self.stack_terrain.sprites():
+                sprite.id -= 1
+
             Terrain(2, self.size, self.stack_terrain.sprites()[1].rect.topright, self.color, self.stack_terrain)
 
         # left
@@ -75,6 +77,9 @@ class General_world():
 
         if rocket.rect.centerx < self.stack_terrain.sprites()[self.count].rect.centerx:
             self.stack_terrain.sprites()[0].kill()
+
+            for sprite in self.stack_terrain.sprites():
+                sprite.id -= 1
 
             # position
             x = self.stack_terrain.sprites()[0].rect.topleft[0] - self.stack_terrain.sprites()[0].image.get_size()[0]
@@ -95,7 +100,8 @@ class Earth(General_world):
 
         # ! TERRAIN CHARACTERISTIC
         self.starting_position = (0,80)
-        self.size = (window_size[0], window_size[1]/2)
+        #self.size = (window_size[0], window_size[1]/2)
+        self.size = (100, 100)
         self.color = "dark green"
 
         self.count = 2
