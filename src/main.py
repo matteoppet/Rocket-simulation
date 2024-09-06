@@ -43,7 +43,8 @@ while running:
     ROCKET.current_state(dt)
     ROCKET.debug(screen, clock)
 
-    # collision(ROCKET, world)
+    if collision(ROCKET, EARTH.stack_terrain):
+        ROCKET.reset()
 
 
     pygame.display.flip()

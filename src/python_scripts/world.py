@@ -86,8 +86,6 @@ class General_world():
             y = self.stack_terrain.sprites()[0].rect.topleft[1]
             Terrain(2, self.size, (x,y), self.color, self.stack_terrain)
 
-            # TODO: check later, problem in github #21
-
 
 class Earth(General_world):
     def __init__(self, window_size):
@@ -100,8 +98,7 @@ class Earth(General_world):
 
         # ! TERRAIN CHARACTERISTIC
         self.starting_position = (0,80)
-        #self.size = (window_size[0], window_size[1]/2)
-        self.size = (100, 100)
+        self.size = (window_size[0], window_size[1]/2)
         self.color = "dark green"
 
         self.count = 2
