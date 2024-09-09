@@ -87,9 +87,10 @@ class General_world():
             Terrain(2, self.size, (x,y), self.color, self.stack_terrain)
 
 
-class Earth(General_world):
-    def __init__(self, window_size):
-        super().__init__()
+class Earth(sprite.Sprite, General_world):
+    def __init__(self, window_size, group):
+        sprite.Sprite.__init__(self)
+        super().__init__(group)
 
         # ! ATTRIBUTES WORLD
         self.name = "earth"
@@ -117,14 +118,14 @@ class YSortCameraGroup(sprite.Group):
 
 
     def custom_draw(self, rocket, world):
-        self.display_surface.fill(BACKGROUND_COLOR)
-
         # calculate offset
         self.calculate_offset(rocket)
 
         # draw terrain
-        world.update_position_terrains(rocket)
-        world.render_terrain(self.display_surface, self.offset, self.zoom_factor)
+        if rocket.altitude < 800:
+            world.update_position_terrains(rocket)
+            world.render_terrain(self.display_surface, self.offset, self.zoom_factor)
+
 
         # draw rocket
         rocket.render(self.display_surface, self.offset, self.zoom_factor)
@@ -137,8 +138,11 @@ class YSortCameraGroup(sprite.Group):
 
     def increase_decrease_zoom(self, type):
         if type == "increase":
-            if self.zoom_factor != 6:
-                self.zoom_factor += 1
+            if self.zoom_factor < 2:
+                self.zoom_factor += 0.1
         if type == "decrease":
-            if self.zoom_factor != 1:
-                self.zoom_factor -= 1
+            if self.zoom_factor > 0.2:
+                self.zoom_factor -= 0.1
+
+
+        print(self.zoom_factor)

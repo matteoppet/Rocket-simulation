@@ -20,13 +20,11 @@ CFLAGS = -shared -fPIC -o
 all: $(DLL_FILES) run
 
 # Only compile the DLL if it doesn't exist
+# Compile the DLL
 $(DLL_FILES): $(SRC_FILES)
-	@if [ ! -f $@ ]; then \
-		echo "Compiling $@ because it doesn't exist."; \
-		@mkdir -p $(LIB_DIR); \
-		$(CC) $(SRC_FILES) $(CFLAGS) $(DLL_FILES); \
-	fi
-
+	@mkdir -p $(LIB_DIR)
+	$(CC) $(SRC_FILES) $(CFLAGS) $(DLL_FILES)
+	
 # Run the Python script
 run: $(DLL_FILES)
 	python $(PYTHON_SCRIPT)

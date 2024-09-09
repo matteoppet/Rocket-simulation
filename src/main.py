@@ -13,8 +13,8 @@ pygame.font.init()
 
 visible_sprites = YSortCameraGroup()
 worlds_sprite = pygame.sprite.Group()
-EARTH = Earth((WINDOW_WIDTH, WINDOW_HEIGHT))
-ROCKET = Rocket(EARTH, visible_sprites)
+EARTH = Earth((WINDOW_WIDTH, WINDOW_HEIGHT), worlds_sprite)
+ROCKET = Rocket(visible_sprites)
  
 CURRENT_PLANET = "earth"
 
@@ -27,25 +27,31 @@ while running:
         if event.type == TIMEREVENT:
             ROCKET.t_minus += 1
             pygame.time.set_timer(TIMEREVENT, 1000)
+            
         if event.type == pygame.MOUSEWHEEL:
             if event.y >= 1:
                 visible_sprites.increase_decrease_zoom("increase")
             if event.y <= -1:
                 visible_sprites.increase_decrease_zoom("decrease")
 
+    screen.fill(BACKGROUND_COLOR)
 
-    visible_sprites.custom_draw(ROCKET, EARTH)
 
-    # calculate everything
-    dt = clock.tick(60)/1000.0
+    for world in worlds_sprite.sprites():
+        if world.name == "earth":
+            visible_sprites.custom_draw(ROCKET, world)
 
-    ROCKET.controls(TIMEREVENT)
-    ROCKET.current_state(dt)
-    ROCKET.debug(screen, clock)
+            # calculate everything
+            dt = clock.tick(60)/1000.0
+            ROCKET.controls(TIMEREVENT)
+            ROCKET.current_state(world, dt)
+            ROCKET.debug(screen, clock)
+
+            break
+
 
     if collision(ROCKET, EARTH.stack_terrain):
         ROCKET.reset()
-
 
     pygame.display.flip()
     clock.tick(60)

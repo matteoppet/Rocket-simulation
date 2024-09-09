@@ -7,14 +7,12 @@ from numpy import linalg # type: ignore
 
 
 class Rocket(sprite.Sprite):
-    def __init__(self, world, group):
+    def __init__(self, group):
         super().__init__(group)
         sprite.Sprite.__init__(self)
 
-        self.world = world
-
         # setup rocket
-        self.size = (10, 80)
+        self.size = Vector2(15, 80)
         self.position = Vector2(150,0)
 
         self.image = image.load('assets/prototype_2.png').convert_alpha()
@@ -22,14 +20,25 @@ class Rocket(sprite.Sprite):
         self.rect = Rect(self.position, self.size)
 
         # ! ROCKET SPECIFICS
-        self.mass = 100.0
-        self.max_thrust = 5000 # newtons
-        # create all variables
+        self.mass = 1000.0
+        self.inertia = 552083.33
+        self.radius_thrust = self.size.y/2
+        self.lateral_thrust_power = 5000 # newtons
+        self.max_main_thrust = 50000 # newtons
         self.reset()
+
+        """ if changing rocket
+        - Change mass
+        - Change inertia
+        - Change radius thrust
+        - Change power main/lateral thrust
+        """
 
         self.fontt = font.SysFont("Helvetica", 18)
 
         self.setup_c_files()
+
+        self.start_time = time.get_ticks()
 
 
     def setup_c_files(self):
@@ -54,54 +63,76 @@ class Rocket(sprite.Sprite):
             ctypes.POINTER(ctypes.c_double),
             ctypes.POINTER(ctypes.c_double)
         ]
+        self.physics.calculate_torque.argtypes = [
+            ctypes.c_double,
+            ctypes.c_double,
+            ctypes.POINTER(ctypes.c_double)
+        ]
+        self.physics.update_angular_acceleration.argtypes = [
+            ctypes.c_double,
+            ctypes.c_double,
+            ctypes.POINTER(ctypes.c_double)
+        ]
+        self.physics.update_angular_velocity.argtypes = [
+            ctypes.c_double,
+            ctypes.c_double,
+            ctypes.POINTER(ctypes.c_double)
+        ]
 
 
     def controls(self, timerevent):
         keys = key.get_pressed()
 
+        self.thrust_force = 0
+
         if keys[K_d]:
-            self.angle += 1
-        if keys[K_a]:
-            self.angle -= 1
+            self.lateral_thrust_force = self.lateral_thrust_power
+            self.time_lateral_thrust = round(((time.get_ticks() - self.start_time)//2)/1000)
+        elif keys[K_a]:
+            self.lateral_thrust_force = -self.lateral_thrust_power
+            self.time_lateral_thrust = round(((time.get_ticks() - self.start_time)//2)/1000)
+        else:
+            self.time_lateral_thrust = 0
+        
         if keys[K_w]:
             if self.on_platform:
                 self.on_platform = False
 
-            if self.thrust_percentage >= 100:
-                self.thrust_percentage = 100
+            if self.main_thrust_percentage >= 100:
+                self.main_thrust_percentage = 100
             else:
-                self.thrust_percentage += 1
+                self.main_thrust_percentage += 1
         
         if keys[K_s]:
-            if self.thrust_percentage <= 0:
-                self.thrust_percentage = 0
+            if self.main_thrust_percentage <= 0:
+                self.main_thrust_percentage = 0
             else:
-                self.thrust_percentage -= 1
+                self.main_thrust_percentage -= 1
         if keys[K_x]:
             self.on_platform = False
-            self.thrust_percentage = 100
+            self.main_thrust_percentage = 100
 
             time.set_timer(timerevent, 1000)
         if keys[K_z]:
-            self.thrust_percentage = 0
+            self.main_thrust_percentage = 0
 
 
-    def current_state(self, dt):
+
+    def current_state(self, current_world, dt):
+        self.world = current_world
+
         # calculate speed
         self.speed = math.sqrt(self.vertical_vel.value**2+self.horizontal_vel.value**2)
 
         # calculate distance from terrain
-        try:
-            self.altitude = self.world.rect.topleft[1] - self.rect.bottomleft[1]
-        except AttributeError:
-            self.altitude = 0
+        self.altitude = self.world.stack_terrain.sprites()[1].rect.topleft[1] - self.rect.bottomleft[1]
         
         # update on_platform variable when applying thrust
         if self.on_platform:
             self.vertical_vel.value = 0
             self.horizontal_vel.value = 0
         else:
-            actual_thrust = (self.thrust_percentage/100)*self.max_thrust # convert actual thrust applied
+            actual_thrust = (self.main_thrust_percentage/100)*self.max_main_thrust # convert actual thrust applied
 
             # update acceleration
             self.physics.update_acceleration(
@@ -126,6 +157,30 @@ class Rocket(sprite.Sprite):
                 self.horizontal_vel,
                 self.vertical_vel
             )
+
+            # calculate torque
+            self.physics.calculate_torque(
+                self.lateral_thrust_force,
+                self.radius_thrust,
+                self.torque
+            )
+
+            # update angular acceleration
+            self.physics.update_angular_acceleration(
+                self.torque,
+                self.inertia,
+                self.angular_acc
+            )
+
+            # update angular velocity
+            self.physics.update_angular_velocity(
+                self.angular_acc,
+                self.time_lateral_thrust,
+                self.angular_vel,
+            )
+
+            # update angle
+            self.angle += self.angular_vel.value * dt
 
         # update position
         self.position.x += self.horizontal_vel.value * dt
@@ -153,26 +208,33 @@ class Rocket(sprite.Sprite):
 
 
     def reset(self):
+        self.torque = ctypes.c_double(0)
         self.angle = 90
-        self.thrust_percentage = 0
-        self.horizontal_vel = ctypes.c_double(0)
-        self.vertical_vel = ctypes.c_double(0)
+        self.lateral_thrust_force = 0
+
+        # acceleration variables
+        self.angular_acc = ctypes.c_double(0)
         self.horizontal_acc = ctypes.c_double(0)
         self.vertical_acc = ctypes.c_double(0)
+
+        # velocity variables
+        self.horizontal_vel = ctypes.c_double(0)
+        self.vertical_vel = ctypes.c_double(0)
+        self.angular_vel = ctypes.c_double(0)
         self.speed = 0
 
+        # others
         self.on_platform = True
         self.collision = False
-
         self.altitude = 0
-
         self.t_minus = 0
+        self.main_thrust_percentage = 0
 
 
     def debug(self, screen, clock):
         text_accelerations = self.fontt.render(f'Acceleration: h:{round(self.horizontal_acc.value, 3)}, v:{round(self.vertical_acc.value, 3)}', False, "black")
         text_velocities = self.fontt.render(f'Velocity: h:{round(self.horizontal_vel.value,3)}, v:{round(self.vertical_vel.value,3)}', False, "black")
-        text_thrust = self.fontt.render(f'Thrust: {self.thrust_percentage}', False, "black")
+        text_thrust = self.fontt.render(f'Thrust: {self.main_thrust_percentage}', False, "black")
         text_on_platform = self.fontt.render(f'On platform: {self.on_platform}', False, "black")
         text_altitude = self.fontt.render(f'Altitude: {self.altitude}m', False, "black")
         text_speed = self.fontt.render(f"Velocity: {round(self.speed,1)} m/s", False, "black")
@@ -190,6 +252,3 @@ class Rocket(sprite.Sprite):
         screen.blit(text_speed, (starting_x, starting_y+120))
         screen.blit(text_time, (starting_x, starting_y+140))
         screen.blit(text_fps, (starting_x, starting_y+160))
-
-
-# describe the laws using in physics to move the rocket in the README, study the law VERY WELL
