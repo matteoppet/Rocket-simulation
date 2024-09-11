@@ -94,12 +94,10 @@ class Simulation:
     def create_buttons(self):
         if self.CURRENT_SCREEN == "simulation":
             self.dict_button_for_each_screen["simulation"].append(
-                Button(pygame.Surface((20,20)), (1000, 500), "change screen", "planets", self.button_sprites)
+                Button(pygame.Surface((20,20)), (WINDOW_WIDTH-40, 30), "change screen", "planets", self.button_sprites)
             )
 
         if self.CURRENT_SCREEN == "planets":
             self.dict_button_for_each_screen["planets"].append(
-                Button(pygame.Surface((20,20)), (1000, 500), "change screen", "simulation", self.button_sprites)
+                Button(pygame.Surface((20,20)), (WINDOW_WIDTH-40, 30), "change screen", "simulation", self.button_sprites)
             )
-
-# setup debug UI of the rocket

@@ -10,16 +10,21 @@ class Camera(pygame.sprite.Group):
         self.offset = pygame.Vector2()
 
         self.zoom_factor = 1
+        
+        self.font = pygame.font.SysFont("Calibri", 18)
+        self.color_text = "white"
 
 
     def render_simulation(self, rocket, world):
         self.calculate_offset_display(rocket)
-        self.display_surface.fill("black")
+        self.display_surface.fill("#1e2629")
 
         world.update_position_terrains(rocket)
         world.render_terrain(self.display_surface, self.offset, self.zoom_factor)
 
         rocket.render(self.display_surface, self.offset, self.zoom_factor)
+
+        self.render_UI(rocket)
 
 
     def render_planets(self):
@@ -29,3 +34,30 @@ class Camera(pygame.sprite.Group):
     def calculate_offset_display(self, rocket):
         self.offset.x = rocket.rect.centerx - self.half_width / self.zoom_factor
         self.offset.y = rocket.rect.centery - self.half_height / self.zoom_factor
+
+
+    def render_UI(self, rocket):
+        rect_background = pygame.Rect(10, 10, 180, 160)
+        pygame.draw.rect(self.display_surface, "#31373a", rect_background, border_radius=3)
+
+        text_acceleration = self.font.render(f"Acceleration: ({round(rocket.horizontal_acc.value, 1)}, {round(rocket.vertical_acc.value,1)})", False, self.color_text)
+        text_velocity = self.font.render(f"Velocity: ({round(rocket.horizontal_vel.value,1)}, {round(rocket.vertical_vel.value,1)})", False, self.color_text)
+        text_angular_acc = self.font.render(f"Angular acc: {round(rocket.angular_acc.value,1)}", False, self.color_text)
+        text_angular_vel = self.font.render(f"Angular vel: {round(rocket.angular_vel.value,1)}", False, self.color_text)
+        text_angle = self.font.render(f"Angle: {round(rocket.angle)}", False, self.color_text)
+        text_altitude = self.font.render(f"Altitude: {rocket.altitude}", False, self.color_text)
+        text_thrust_percentage = self.font.render(f"Main thrust: {rocket.main_thrust_percentage}", False, self.color_text)
+
+        y_pos = rect_background.y + 10
+        x_pos = rect_background.x + 10
+        self.display_surface.blit(text_acceleration, (x_pos, y_pos))
+        self.display_surface.blit(text_velocity, (x_pos, y_pos+20))
+        self.display_surface.blit(text_angular_acc, (x_pos, y_pos+40))
+        self.display_surface.blit(text_angular_vel, (x_pos, y_pos+60))
+        self.display_surface.blit(text_angle, (x_pos, y_pos+80))
+        self.display_surface.blit(text_altitude, (x_pos, y_pos+100))
+        self.display_surface.blit(text_thrust_percentage, (x_pos, y_pos+120))
+    
+
+    def increase_decrease_zoom(self, type):
+        ...
