@@ -1,6 +1,4 @@
-from pygame import sprite, Rect, Surface, Vector2, display, transform, draw, font
-from python_scripts.settings import *
-
+from pygame import sprite, Surface, transform
 
 class Terrain(sprite.Sprite):
     def __init__(self, id, size, pos, color, group):
@@ -12,10 +10,9 @@ class Terrain(sprite.Sprite):
         self.image = Surface(size)
         self.rect = self.image.get_rect(topleft=pos)
         self.image.fill(color)
+        
 
-
-
-class General_world():
+class General_World:
     def init_stack_terrain(self):
         """ Create the stack terrain group and init the first three terrain blocks
         """
@@ -87,7 +84,7 @@ class General_world():
             Terrain(2, self.size, (x,y), self.color, self.stack_terrain)
 
 
-class Earth(sprite.Sprite, General_world):
+class Earth(sprite.Sprite, General_World):
     def __init__(self, window_size, group):
         sprite.Sprite.__init__(self)
         super().__init__(group)
@@ -104,45 +101,3 @@ class Earth(sprite.Sprite, General_world):
 
         self.count = 2
         self.init_stack_terrain()
-
-
-class YSortCameraGroup(sprite.Group):
-    def __init__(self):
-        super().__init__()
-        self.display_surface = display.get_surface()
-        self.half_width = self.display_surface.get_size()[0] // 2
-        self.half_height = self.display_surface.get_size()[1] // 2
-        self.offset = Vector2()
-
-        self.zoom_factor = 1
-
-
-    def custom_draw(self, rocket, world):
-        # calculate offset
-        self.calculate_offset(rocket)
-
-        # draw terrain
-        if rocket.altitude < 800:
-            world.update_position_terrains(rocket)
-            world.render_terrain(self.display_surface, self.offset, self.zoom_factor)
-
-
-        # draw rocket
-        rocket.render(self.display_surface, self.offset, self.zoom_factor)
-
-
-    def calculate_offset(self, rocket):
-        self.offset.x = rocket.rect.centerx - self.half_width / self.zoom_factor
-        self.offset.y = rocket.rect.centery - self.half_height / self.zoom_factor
-
-
-    def increase_decrease_zoom(self, type):
-        if type == "increase":
-            if self.zoom_factor < 2:
-                self.zoom_factor += 0.1
-        if type == "decrease":
-            if self.zoom_factor > 0.2:
-                self.zoom_factor -= 0.1
-
-
-        print(self.zoom_factor)
