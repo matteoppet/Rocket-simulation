@@ -37,7 +37,7 @@ class Camera(pygame.sprite.Group):
 
 
     def render_UI(self, rocket):
-        rect_background = pygame.Rect(10, 10, 180, 160)
+        rect_background = pygame.Rect(10, 10, 190, 160)
         pygame.draw.rect(self.display_surface, "#31373a", rect_background, border_radius=3)
 
         text_acceleration = self.font.render(f"Acceleration: ({round(rocket.horizontal_acc.value, 1)}, {round(rocket.vertical_acc.value,1)})", False, self.color_text)

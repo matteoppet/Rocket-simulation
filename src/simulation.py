@@ -84,6 +84,7 @@ class Simulation:
                     dt = self.clock.tick(60)/1000.0
                     self.ROCKET.controls()
                     self.ROCKET.current_state(world, dt)
+                    self.ROCKET.update_position_angle_rocket(dt)
 
                     self.ROCKET.collision(world.stack_terrain)
 

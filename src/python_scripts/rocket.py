@@ -2,21 +2,100 @@ from pygame import Vector2, sprite, image, Rect, transform, key, K_d, K_a, K_w, 
 import ctypes
 import math
 from numpy import linalg # type: ignore
+from math import exp
 
-class Rocket(sprite.Sprite):
+
+class RocketBehavior:
+    EXPONENTIAL_DECAY_CONSTANT = 0.00693
+
+    def current_state(self, current_world, dt):
+        if self.touch_ground:
+            self.reset()
+        else: 
+            self.current_world = current_world
+            self.dt = dt
+
+            if self.main_thrust_percentage == 0:
+                self.time_main_thrust_activated = 0
+            else:
+                self.time_main_thrust_activated = round(((time.get_ticks() - self.start_time)//2)/1000)
+
+            self.current_mass = self.mass - self.get_current_mass
+
+            self.physics.update_acceleration(
+                self.get_current_gravity,
+                self.current_world.drag_coeff,
+                self.current_mass,
+                self.angle,
+                self.get_actual_thrust_power,
+                self.horizontal_vel.value,
+                self.vertical_vel.value,
+                self.horizontal_acc,
+                self.vertical_acc
+            )
+
+            self.physics.update_velocity(
+                self.horizontal_acc.value,
+                self.vertical_acc.value,
+                self.dt,
+                self.horizontal_vel.value,
+                self.vertical_vel.value,
+                self.horizontal_vel,
+                self.vertical_vel
+            )
+
+            self.physics.calculate_torque(
+                self.lateral_thrust_percentage,
+                self.radius_thrust,
+                self.torque
+            )
+
+            self.physics.update_angular_acceleration(
+                self.torque,
+                self.inertia,
+                self.angular_acc
+            )
+
+            self.physics.update_angular_velocity(
+                self.angular_acc,
+                self.time_lateral_thrust_activated,
+                self.angular_vel
+            )
+
+    @property
+    def get_fuel_remaining(self):
+        return self.initial_fuel * exp(-self.EXPONENTIAL_DECAY_CONSTANT * self.time_main_thrust_activated)
+
+    @property
+    def get_current_mass(self):
+        return self.mass - (self.mass * exp(-self.EXPONENTIAL_DECAY_CONSTANT * self.time_main_thrust_activated))
+    
+    @property
+    def get_speed(self):
+        return math.sqrt(self.vertical_vel.value**2+self.horizontal_vel.value**2)
+    
+    @property
+    def get_altitude(self):
+        return self.current_world.stack_terrain.sprites()[1].rect.topleft[1] - self.rect.bottomleft[1]
+
+    @property
+    def get_actual_thrust_power(self):
+        return (self.main_thrust_percentage/100)*self.main_thrust_power
+
+    @property
+    def get_current_gravity(self):
+        return self.current_world.update_forces(self.altitude)
+
+
+
+class Rocket(sprite.Sprite, RocketBehavior):
     def __init__(self, group):
         super().__init__(group)
         sprite.Sprite.__init__(self)
 
-        # ROCKET SPECIFICS
-        self.size = Vector2(15, 80)
-        self.position = Vector2(150, 0)
-        self.mass = 1000.0
-        self.inertia = 552083.33
-        self.radius_thrust = self.size.y/2
-        self.main_thrust_power = 50000
-        self.lateral_thrust_power = 5000
+        self.rocket_specifics()
 
+        self.position = Vector2(150, 0)
         self.image = image.load('assets/prototype_2.png').convert_alpha()
         self.copy_image = self.image.copy()
         self.rect = Rect(self.position, self.size)
@@ -32,6 +111,21 @@ class Rocket(sprite.Sprite):
         - Change radius thrust
         - Change power main/lateral thrust
         """
+
+
+    def rocket_specifics(self):
+        self.size = Vector2(15, 80)
+
+        self.mass = 1000.0
+        self.inertia = 552083.33
+        self.reference_area = self.size.y * self.size.x
+
+        self.main_thrust_power = 50000
+        self.lateral_thrust_power = 5000
+        self.radius_thrust = self.size.y / 2
+
+        self.initial_fuel = 1000
+        self.current_fuel = 1000
 
 
     def c_functions(self):
@@ -88,7 +182,7 @@ class Rocket(sprite.Sprite):
 
         self.altitude = 0
         self.time = 0
-        self.touch_ground = False
+        self.touch_ground = True
 
         self.main_thrust_percentage = 0
         self.lateral_thrust_percentage = 0
@@ -110,70 +204,6 @@ class Rocket(sprite.Sprite):
 
         # blit image
         screen.blit(rotated_image, rotated_rect)
-
-
-    def current_state(self, current_world, dt):
-        self.speed = math.sqrt(self.vertical_vel.value**2+self.horizontal_vel.value**2)
-        self.altitude = current_world.stack_terrain.sprites()[1].rect.topleft[1] - self.rect.bottomleft[1]
-
-        if self.touch_ground:
-            self.reset()
-        else:
-            actual_thrust = (self.main_thrust_percentage/100)*self.main_thrust_power
-
-            # update acceleration
-            self.physics.update_acceleration(
-                self.mass,
-                actual_thrust,
-                current_world.drag_coeff,
-                current_world.gravity,
-                self.angle,
-                self.horizontal_vel.value,
-                self.vertical_vel.value,
-                self.horizontal_acc,
-                self.vertical_acc
-            )
-
-            # update velocity
-            self.physics.update_velocity(
-                self.horizontal_acc.value,
-                self.vertical_acc.value,
-                dt,
-                self.horizontal_vel.value,
-                self.vertical_vel.value,
-                self.horizontal_vel,
-                self.vertical_vel
-            )
-
-            # calculate torque
-            self.physics.calculate_torque(
-                self.lateral_thrust_percentage,
-                self.radius_thrust,
-                self.torque
-            )
-
-            # update angular acceleration
-            self.physics.update_angular_acceleration(
-                self.torque,
-                self.inertia,
-                self.angular_acc
-            )
-
-            # update angular velocity
-            self.physics.update_angular_velocity(
-                self.angular_acc,
-                self.time_lateral_thrust_activated,
-                self.angular_vel,
-            )
-
-        # update angle
-        self.angle += self.angular_vel.value * dt
-
-        # update position
-        self.position.x += self.horizontal_vel.value * dt
-        self.position.y -= self.vertical_vel.value * dt
-
-        self.rect.topleft = (self.position.x, self.position.y)
 
 
     def controls(self):
@@ -202,7 +232,6 @@ class Rocket(sprite.Sprite):
                 self.main_thrust_percentage = 0
             else:
                 self.main_thrust_percentage -= 1
-            
 
         # Cut-on Cut-off main thrust
         if keys[K_x]:
@@ -215,3 +244,14 @@ class Rocket(sprite.Sprite):
     def collision(self, group_sprites):
         if sprite.spritecollideany(self, group_sprites):
             self.reset()
+
+
+    def update_position_angle_rocket(self, dt):
+        # update angle
+        self.angle += self.angular_vel.value * dt
+
+        # update position
+        self.position.x += self.horizontal_vel.value * dt
+        self.position.y -= self.vertical_vel.value * dt
+
+        self.rect.topleft = (self.position.x, self.position.y)
