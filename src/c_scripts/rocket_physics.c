@@ -6,6 +6,8 @@
 void update_acceleration(
     double gravity,
     double drag_coeff,
+    double air_density,
+    double cross_sectional_area,
     double mass,
     double angle,
     double main_thrust_power,
@@ -21,8 +23,8 @@ void update_acceleration(
     double thrust_x = main_thrust_power * cos(radians);
     double thrust_y = main_thrust_power * sin(radians);
 
-    double drag_force_h = 0.5 * drag_coeff *  (h_v * h_v);
-    double drag_force_y = 0.5 * drag_coeff * (v_v * v_v);
+    double drag_force_h = 0.5 *  drag_coeff * air_density * cross_sectional_area * (h_v * h_v);
+    double drag_force_y = 0.5 * drag_coeff * air_density * cross_sectional_area * (v_v * v_v);
 
     *h_a = (thrust_x - drag_force_h) / mass;
     *v_a = ((thrust_y - drag_force_y) / mass) - gravity;
@@ -49,3 +51,8 @@ void update_angular_acceleration(double torque, double inertia, double *angular_
 void update_angular_velocity(double angular_acceleration, double time_thrust, double *angular_velocity) {
     *angular_velocity += angular_acceleration * time_thrust;
 } 
+
+
+void calculate_inertia(double width, double height, double mass, double *inertia) {
+    *inertia = 0.83 * mass * ((width * width) + (height * height));
+}

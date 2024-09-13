@@ -79,14 +79,14 @@ class Simulation:
         if self.CURRENT_SCREEN == "simulation":
             for world in self.world_sprites:
                 if world.name == self.CURRENT_PLANET:
-                    self.visible_sprites.render_simulation(self.ROCKET, world)
-
                     dt = self.clock.tick(60)/1000.0
                     self.ROCKET.controls()
                     self.ROCKET.current_state(world, dt)
                     self.ROCKET.update_position_angle_rocket(dt)
 
                     self.ROCKET.collision(world.stack_terrain)
+
+                    self.visible_sprites.render_simulation(self.ROCKET, world)
 
         elif self.CURRENT_SCREEN == "planets":
             self.visible_sprites.render_planets()

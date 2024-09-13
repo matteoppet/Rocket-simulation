@@ -21,13 +21,17 @@ class Environment:
         self.drag_coeff = drag_coeff
         self.air_density_sea_level = air_density_sea_level
         self.beginning_of_space = beginning_of_space
+        self.scale_height = 7000
  
 
     def update_forces(self, rocket_altitude):
         # update gravity
         current_gravity = self.gravity * float((6371000 / (6371000 + rocket_altitude)) ** 2)
 
-        return current_gravity
+        # update air density
+        current_air_density = self.air_density_sea_level * exp(-rocket_altitude/self.scale_height)
+
+        return current_gravity, current_air_density
 
 
     def init_stack_terrain(self):
