@@ -1,74 +1,77 @@
-from pygame import Vector2, sprite, image, Rect, transform, key, K_d, K_a, K_w, K_s, K_x, K_z, K_c, time
+from pygame import Vector2, sprite, image, Rect, transform, key, K_d, K_a, K_w, K_s, K_x, K_z, K_c, K_r, time
 import ctypes
 import math
 from numpy import linalg # type: ignore
 from math import exp
+from settings import *
 
 
-class RocketBehavior:
-    EXPONENTIAL_DECAY_CONSTANT = 0.00693
+class RocketCalculations:
+    EXPONENTIAL_DECAY_CONSTANT = 0.02 # search docs rockets engines
 
-    def current_state(self, current_world, dt):
-        self.current_world = current_world
+    def current_state(self, environment, current_planet, dt):
+        self.environment = environment
+        self.current_planet = current_planet
 
-        if self.touch_ground:
-            self.reset()
-        else: 
-            self.dt = dt
+        self.dt = dt
 
-            if self.main_thrust_percentage > 0:
-                if self.time_main_thrust_activated == 0:
-                    self.start_time_main_thrust = time.get_ticks()
-                self.time_main_thrust_activated = round(((time.get_ticks() - self.start_time)//2)/1000)
-            else:
-                self.time_main_thrust_activated = self.time_main_thrust_activated
+        if self.main_thrust_percentage > 0:
+            if self.time_main_thrust_activated == 0:
+                self.start_time_main_thrust = time.get_ticks()
+            self.time_main_thrust_activated = round(((time.get_ticks() - self.start_time)//2)/1000)
+        else:
+            self.time_main_thrust_activated = self.time_main_thrust_activated
 
-            self.current_mass = self.mass - self.get_current_mass
-            self.speed = self.get_speed
-            self.actual_power = self.get_actual_thrust_power
+        self.current_mass = self.mass - self.get_current_mass
+        self.speed = self.get_speed
+        self.actual_power = self.get_actual_thrust_power
 
-            if self.get_fuel_remaining <= 0:
-                self.actual_power = 0
+        if self.get_fuel_remaining <= 0:
+            self.actual_power = 0
 
-            self.physics.update_acceleration(
-                self.get_current_gravity,
-                self.current_world.drag_coeff,
-                self.get_current_air_density,
-                self.get_cross_sectional_area,
-                self.current_mass,
-                self.angle,
-                self.actual_power,
-                self.horizontal_vel.value,
-                self.vertical_vel.value,
-                self.horizontal_acc,
-                self.vertical_acc
-            )
+        if self.get_altitude < 200:
+            self.deploy_legs = True
+        else: self.deploy_legs = False
 
-            self.physics.update_velocity(
-                self.horizontal_acc.value,
-                self.vertical_acc.value,
-                self.dt,
-                self.horizontal_vel.value,
-                self.vertical_vel.value,
-                self.horizontal_vel,
-                self.vertical_vel
-            )
+        self.physics.update_acceleration(
+            self.get_current_gravity,
+            self.get_drag_coeff,
+            self.get_current_air_density,
+            self.get_cross_sectional_area,
+            self.current_mass,
+            self.angle,
+            self.actual_power,
+            self.horizontal_vel.value,
+            self.vertical_vel.value,
+            self.horizontal_acc,
+            self.vertical_acc
+        )
 
-            self.physics.calculate_torque(
-                self.lateral_thrust_percentage, self.radius_thrust, self.torque
-            )
+        self.physics.update_velocity(
+            self.horizontal_acc.value,
+            self.vertical_acc.value,
+            self.dt,
+            self.horizontal_vel.value,
+            self.vertical_vel.value,
+            self.horizontal_vel,
+            self.vertical_vel
+        )
 
-            self.physics.calculate_inertia(
-                self.size.x, self.size.y, self.current_mass, self.inertia
-            )
+        self.physics.calculate_torque(
+            self.lateral_thrust_percentage, self.radius_thrust, self.torque
+        )
 
-            self.physics.update_angular_acceleration(
-                self.torque, self.inertia.value, self.angular_acc
-            )
+        self.physics.calculate_inertia(
+            self.size.x, self.size.y, self.current_mass, self.inertia
+        )
 
-            self.physics.update_angular_velocity(
-                self.angular_acc, self.time_lateral_thrust_activated, self.angular_vel
-            )
+        self.physics.update_angular_acceleration(
+            self.torque, self.inertia.value, self.angular_acc
+        )
+
+        self.physics.update_angular_velocity(
+            self.angular_acc, self.time_lateral_thrust_activated, self.angular_vel
+        )
 
 
     @property
@@ -83,10 +86,9 @@ class RocketBehavior:
     def get_speed(self):
         return math.sqrt(self.vertical_vel.value**2+self.horizontal_vel.value**2)
     
-    # ! TODO
     @property
     def get_altitude(self):
-        return +self.rect.bottomleft[1] - self.current_world.stack_terrain.sprites()[1].rect.topleft[1]
+        return -self.position.y + self.environment.rects_environment["platform"].topleft[1]
 
     @property
     def get_actual_thrust_power(self):
@@ -94,7 +96,7 @@ class RocketBehavior:
 
     @property
     def get_current_gravity(self):
-        return self.current_world.update_forces(self.altitude)[0]
+        return self.environment.update_forces(self.altitude, self.environment.current_world)[0]
     
     @property
     def get_thrust_to_weight_ratio(self):
@@ -102,7 +104,7 @@ class RocketBehavior:
     
     @property
     def get_current_air_density(self):
-        return self.current_world.update_forces(self.altitude)[1]
+        return self.environment.update_forces(self.altitude, self.environment.current_world)[1]
 
     @property
     def get_cross_sectional_area(self):
@@ -115,20 +117,36 @@ class RocketBehavior:
         else:  # for angles
             return abs(self.rect.width * math.cos(angle_radians) + self.rect.height * math.sin(angle_radians))
 
+    @property
+    def get_drag_coeff(self):
+        if round(self.angle) > 45 and round(self.angle) < 135 or round(self.angle) > 225 and round(self.angle) > -45:
+            return self.environment.planets_data[self.current_planet]["drag_coeff"]
+        elif round(self.angle) < 45 and round(self.angle) > -45 or round(self.angle) > 135 and round(self.angle) < 225:
+            return self.environment.planets_data[self.current_planet]["drag_coeff"]+2
+        else:
+            return self.environment.planets_data[self.current_planet]["drag_coeff"]
 
-class Rocket(sprite.Sprite, RocketBehavior):
-    def __init__(self, group):
-        super().__init__(group)
+    @property
+    def get_mach_number(self):
+        return self.speed / 340.2 # m/s=343.2 km/h = 1235.6
+
+
+
+class Rocket(sprite.Sprite, RocketCalculations):
+    def __init__(self):
+        super().__init__()
         sprite.Sprite.__init__(self)
 
         self.rocket_specifics()
 
-        self.position = Vector2(150, 0)
+        # 150, -44
+        self.starting_position = (200, 800)
+
+        self.position = Vector2(self.starting_position)
         self.image = image.load('assets/prototype_2.png').convert_alpha()
         self.copy_image = self.image.copy()
         self.rect = Rect(self.position, self.size)
 
-        # OTHERS
         self.c_functions()
         self.reset()
         self.start_time = time.get_ticks()
@@ -143,7 +161,7 @@ class Rocket(sprite.Sprite, RocketBehavior):
 
 
     def rocket_specifics(self):
-        self.size = Vector2(15, 80)
+        self.size = Vector2(17, 209)
 
         self.mass = 1000.0
         self.current_mass = self.mass
@@ -153,8 +171,10 @@ class Rocket(sprite.Sprite, RocketBehavior):
         self.lateral_thrust_power = 5000
         self.radius_thrust = self.size.y / 2
 
-        self.initial_fuel = 1
+        self.initial_fuel = 1000 # kg
         self.current_fuel = self.initial_fuel
+
+        self.deploy_legs = True
 
 
     def c_functions(self):
@@ -232,25 +252,17 @@ class Rocket(sprite.Sprite, RocketBehavior):
 
         self.time_main_thrust_activated = 0
 
+        self.position = Vector2(self.starting_position)
 
-    def render(self, screen, offset, zoom_factor):
-        # image modification
-        rocket_scaled_image = transform.scale(
-            self.image,
-            (
-                int(self.image.get_width() * zoom_factor),
-                int(self.image.get_height() * zoom_factor)
-            ))
-        # calculate offset
-        rocket_offset_pos = (self.rect.center - offset) * zoom_factor
 
-        rotated_image = transform.rotate(rocket_scaled_image, self.angle)
-        rotated_rect = rotated_image.get_rect(center=rocket_offset_pos)
+    def render(self, screen):
+        rotated_image = transform.rotate(self.image.copy(), self.angle)
+        rotated_rect = rotated_image.get_rect(center=self.position)
 
         self.rect = rotated_rect
 
         # blit image
-        screen.blit(rotated_image, rotated_rect)
+        screen.blit(rotated_image, self.rect)
 
 
     def controls(self):
@@ -291,10 +303,17 @@ class Rocket(sprite.Sprite, RocketBehavior):
         elif keys[K_c]:
             self.lateral_thrust_percentage = 0
 
-
-    def collision(self, group_sprites):
-        if sprite.spritecollideany(self, group_sprites):
+        if keys[K_r]:
             self.reset()
+
+
+    def collision(self, platform_rect):
+        if self.rect.colliderect(platform_rect):
+            self.horizontal_acc.value = 0
+            self.horizontal_vel.value = 0
+
+            self.vertical_acc.value = 0
+            self.vertical_vel.value = 0
 
 
     def update_position_angle_rocket(self, dt):
@@ -305,6 +324,13 @@ class Rocket(sprite.Sprite, RocketBehavior):
         self.position.x += self.horizontal_vel.value * dt
         self.position.y -= self.vertical_vel.value * dt
 
-        self.rect.topleft = (self.position.x, self.position.y)
+        self.rect.center = (self.position.x, self.position.y)
 
-# problem altitude
+
+"""
+1. Create the only rocket launch for now. rocket launch test, then come back to earth
+2. add the recovery possibility, add the parachute
+2.5 add the autopilot button (i.e. computer boar)
+3. add the planets and the orbitals as map where you can choose where to start
+4. then think if do the whole game
+"""

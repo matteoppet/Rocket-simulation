@@ -3,6 +3,16 @@
 
 #define M_PI 3.14159265358979323846
 
+
+int sign(double velocity) {
+    if (velocity >= 0) {
+        return 1;
+    } else {
+        return -1;
+    }
+}
+
+
 void update_acceleration(
     double gravity,
     double drag_coeff,
@@ -26,7 +36,7 @@ void update_acceleration(
     double drag_force_h = 0.5 *  drag_coeff * air_density * cross_sectional_area * (h_v * h_v);
     double drag_force_y = 0.5 * drag_coeff * air_density * cross_sectional_area * (v_v * v_v);
 
-    *h_a = (thrust_x - drag_force_h) / mass;
+    *h_a = (thrust_x - (drag_force_h * sign(h_v))) / mass;
     *v_a = ((thrust_y - drag_force_y) / mass) - gravity;
 }
 

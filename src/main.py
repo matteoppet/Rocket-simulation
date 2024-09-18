@@ -8,5 +8,5 @@ clock = pygame.time.Clock()
 running = True
 pygame.font.init()
 
-SIMULATION = Simulation()
+SIMULATION = Simulation(screen)
 SIMULATION.run()
