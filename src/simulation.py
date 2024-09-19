@@ -1,7 +1,7 @@
 import pygame
 from python_scripts.camera import Camera
 from python_scripts.rocket import Rocket
-from environment import Environment
+from python_scripts.environment import Environment
 from settings import *
 
 
@@ -30,11 +30,10 @@ class Simulation:
 
     def screen_handling(self):
         dt = self.clock.tick(60)/1000.0
-        self.ROCKET.controls()
-        self.ROCKET.current_state(self.environment, self.environment.current_world, dt)
-        self.ROCKET.update_position_angle_rocket(dt)
-        self.ROCKET.collision(self.environment.rects_environment["platform"])
-        self.ROCKET.render(self.screen)
 
+        self.ROCKET.controls()
+        self.ROCKET.calculate_state(dt)
+
+        self.ROCKET.render(self.screen)
         self.environment.render_water(self.screen)
         self.environment.render_platform(self.screen)
