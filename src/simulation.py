@@ -34,6 +34,8 @@ class Simulation:
         self.ROCKET.controls()
         self.ROCKET.calculate_state(dt)
 
+        self.ROCKET.collision(self.environment.rects_environment["platform"])
+
         self.ROCKET.render(self.screen)
         self.environment.render_water(self.screen)
         self.environment.render_platform(self.screen)
