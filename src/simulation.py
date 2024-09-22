@@ -31,8 +31,11 @@ class Simulation:
     def screen_handling(self):
         dt = self.clock.tick(60)/1000.0
 
-        self.ROCKET.controls()
-        self.ROCKET.calculate_state(dt)
+        self.ROCKET.controls(dt)
+        if not self.ROCKET.test_launch_var:
+            self.ROCKET.calculate_state(dt)
+        else:
+            self.ROCKET.test_launch(dt)
 
         self.ROCKET.collision(self.environment.rects_environment["platform"])
 
