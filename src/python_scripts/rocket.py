@@ -126,7 +126,6 @@ class Rocket(pygame.sprite.Sprite, RocketCalculation):
         else:
             self.gimbal_angle = 0
 
- 
 
     def collision(self, platform):
         if self.direction.magnitude() != 0:
@@ -159,22 +158,47 @@ class Rocket(pygame.sprite.Sprite, RocketCalculation):
             # choose angle start
             angle_start = int(input("Start angle rocket: "))
             self.rocket_angle = angle_start
+            self.gimbal_angle = self.rocket_angle
 
-            time.sleep(3)
+            self.info()
+            fire = int(input("Fire (0-1): "))
 
-            self.start_time = pygame.time.get_ticks()
+            if fire == 1:
+                time.sleep(3)
+                print()
+                self.start_time = pygame.time.get_ticks()
 
+                # calculate time thrust applied, if >= 1, thrust to 0 and free-fall rocket
+                time_thrust_applied = round(((pygame.time.get_ticks() - self.start_time)//2)/1000)
+                self.current_thrust_power = self.max_thrust_power
+                if time_thrust_applied >= 1:
+                    self.current_thrust_power = 0
+                print(self.current_thrust_power, time_thrust_applied, self.rocket_angle)
 
-        # calculate time thrust applied, if >= 1, thrust to 0 and free-fall rocket
-        time_thrust_applied = round(((pygame.time.get_ticks() - self.start_time)//2)/1000)
-        self.current_thrust_power = self.max_thrust_power
-        if time_thrust_applied >= 1:
-            self.current_thrust_power = 0
-        print(self.current_thrust_power, time_thrust_applied, self.rocket_angle)
-
-        self.calculate_state(dt)
+                self.calculate_state(dt)
+            else:
+                self.test_launch_var = False
+                self.reset()
 
         # this is just a temporary function, implement better later
+
+
+    def info(self):
+        # initial mass
+        print("\nInitial mass: ", self.mass)
+        # initial fuel
+        print("Initial fuel: ", self.fuel)
+        # rocket angle start
+        print("Starting angle rocket: ", self.rocket_angle)
+        # radius thrust
+        print("Radius thrust: ", self.radius_thrust)
+        # reference area
+        print("Reference area: ", self.reference_area)
+        # max_thrust_power
+        print("\nEngine thrust power: ", self.max_thrust_power)
+        # gimbal start angle
+        print("Engine start angle: ", self.gimbal_angle)
+
 
 
 # TODO: Create info rocket, tell everything about the rocket
