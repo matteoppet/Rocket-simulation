@@ -10,23 +10,27 @@ class Setup:
         self.variables = {
             "environment": {
                 "gravity": 9.81,
-                "air_density_sea_level": 1.225,
-                "drag_coeff": 0.7
+                "air-density-sea-level": 1.225,
+                "wind": 0,
             },
             "rocket": {
-                "initial_mass": 10.0,
-                "initial_fuel": 5.0,
+                "initial-mass": 10.0,
+                "fuel-capacity": 0,
+                "cd": 0.7,
             },
             "engine": {
-                "power": 0,
-                "mass_flow_rate": 0,
-                "name": "test_1"
+                "power": 120,
+                "name": "test_1",
+                "isp": 300, # (specific impulse) solid engine = 200-300 seconds, liquid engine = 300-450 change un get_mass_flow_rate
+                "thrust_vectoring": 0, # maximum angle by which the negine can gimbal
+                "num_engines": 0,
             },
-            "pad": {
+            "mission-parameters": {
                 "angle": 0,
                 "position": 0,
-                "type": "water"
-            }
+                "altitude": 0,
+                "planet": "earth",
+            },
         }
 
         self.user_text = ''
@@ -36,10 +40,10 @@ class Setup:
         height_rect = 30
         self.rect_input_text = pygame.Rect(0, window_size[1]-height_rect, width_rect, height_rect)
 
-        self.environment_rect_window = pygame.Rect(100, 200, 400, 200)
-        self.rocket_rect_window = pygame.Rect(700, 200, 400, 200)
-        self.engine_rect_window = pygame.Rect(1300, 200, 400, 200)
-        self.pad_rect_window = pygame.Rect(100, 600, 400, 200)
+        self.environment_rect_window = pygame.Rect(100, 100, 400, 200)
+        self.rocket_rect_window = pygame.Rect(700, 100, 400, 200)
+        self.engine_rect_window = pygame.Rect(1300, 100, 400, 200)
+        self.mission_parameters_rect_window = pygame.Rect(100, 600, 300, 200)
 
 
     def run(self, screen):
@@ -60,19 +64,20 @@ class Setup:
                 self.draw_text(key.title(), "black", self.font_title, self.engine_rect_window.topleft, screen)
                 start_pos_text_x = self.engine_rect_window[0]
                 start_pos_text_y = self.engine_rect_window[1]+20
-            elif key == "pad":
-                pygame.draw.rect(screen, "gray", self.pad_rect_window)
-                self.draw_text(key.title(), "black", self.font_title, self.pad_rect_window.topleft, screen)
-                start_pos_text_x = self.pad_rect_window[0]
-                start_pos_text_y = self.pad_rect_window[1]+20
+            elif key == "mission-parameters":
+                pygame.draw.rect(screen, "gray", self.mission_parameters_rect_window)
+                self.draw_text(key.title(), "black", self.font_title, self.mission_parameters_rect_window.topleft, screen)
+                start_pos_text_x = self.mission_parameters_rect_window[0]
+                start_pos_text_y = self.mission_parameters_rect_window[1]+20
+
 
             for subkey, subvalue in value.items():
                 start_pos_text_y += 20
-                self.draw_text(f"{subkey}", "black", self.font_text, (start_pos_text_x, start_pos_text_y), screen)
+                self.draw_text(f"{subkey.capitalize()}", "black", self.font_text, (start_pos_text_x, start_pos_text_y), screen)
                 self.draw_value(f" {subvalue}", "black", self.font_text, (start_pos_text_x+200, start_pos_text_y), screen)
 
         pygame.draw.rect(screen, "gray", self.rect_input_text)
-        self.draw_text(f"Text: {self.user_text}", "black", self.font_text, (self.rect_input_text.x, self.rect_input_text.y+5), screen)
+        self.draw_text(f"> {self.user_text}", "black", self.font_text, (self.rect_input_text.x, self.rect_input_text.y+5), screen)
 
         buttons_rect = self.buttons()
         for button_rect in buttons_rect:
@@ -115,9 +120,10 @@ class Setup:
 
     
     def buttons(self):
-        reset_button_rect = pygame.Rect(1600, self.pad_rect_window.bottomright[1], 20, 20)
-        launch_button_rect = pygame.Rect(1640, self.pad_rect_window.bottomright[1], 20, 20)
+        reset_button_rect = pygame.Rect(1600, self.mission_parameters_rect_window.bottomright[1], 30, 30)
+        launch_button_rect = pygame.Rect(1640, self.mission_parameters_rect_window.bottomright[1], 30, 30)
 
         return [reset_button_rect, launch_button_rect]
 
-# implement better the graphics
+# continue update graphic in setup
+# then system everything in simulation

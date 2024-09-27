@@ -16,7 +16,7 @@ class Simulation:
         self.ENVIRONMENT = Environment((WINDOW_WIDTH, WINDOW_HEIGHT))
         self.SETUP = Setup((WINDOW_WIDTH, WINDOW_HEIGHT))
 
-        self.current_screen = "simulation"
+        self.current_screen = "setup"
 
 
     def run(self):
@@ -32,6 +32,7 @@ class Simulation:
                     if event.key == pygame.K_RETURN:
                         if self.current_screen == "setup":
                             if not self.SETUP.active:
+                                self.ROCKET.set_parameters(self.SETUP.variables)
                                 self.ROCKET.reset()
                                 self.current_screen = "simulation"
                 
