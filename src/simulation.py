@@ -1,8 +1,7 @@
 import pygame
-from python_scripts.camera import Camera
-from python_scripts.rocket import Rocket
-from python_scripts.environment import Environment
-from python_scripts.setup_simulation import Setup
+from helpers.rocket import Rocket
+from helpers.environment import Environment
+from helpers.setup_simulation import Setup
 from settings import *
 
 import time
@@ -10,11 +9,13 @@ import time
 class Simulation:
     def __init__(self, screen):
         self.screen = screen
+
         self.clock = pygame.time.Clock()
 
         self.ROCKET = Rocket()
         self.ENVIRONMENT = Environment((WINDOW_WIDTH, WINDOW_HEIGHT))
         self.SETUP = Setup((WINDOW_WIDTH, WINDOW_HEIGHT))
+        self.SETUP.create_rect_for_values()
 
         self.current_screen = "setup"
 
@@ -29,25 +30,21 @@ class Simulation:
                 
                 # change screen
                 if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_RETURN:
+                    if event.key == pygame.K_LSHIFT:
                         if self.current_screen == "setup":
-                            if not self.SETUP.active:
-                                self.ROCKET.set_parameters(self.SETUP.variables)
-                                self.ROCKET.reset()
-                                self.current_screen = "simulation"
-                
-                        elif self.current_screen == "simulation":
+                            self.ROCKET.set_parameters(self.SETUP.variables)
+                            self.ROCKET.reset()
+                            self.current_screen = "simulation"
+                        else:
                             self.current_screen = "setup"
 
                 # if in setup window
                 if self.current_screen == "setup":
                     if event.type == pygame.MOUSEBUTTONDOWN:
-                        mouse_pos = pygame.mouse.get_pos()
-                        if self.SETUP.rect_input_text.collidepoint(mouse_pos):
-                            self.SETUP.active = True
+                        self.SETUP.check_event_edit_variable(pygame.mouse.get_pos())
 
                     if event.type == pygame.KEYDOWN:
-                        self.SETUP.user_input_text(event)
+                        self.SETUP.edit_variable(event)
  
             if self.current_screen == "setup":
                 self.setup()
