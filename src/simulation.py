@@ -14,7 +14,7 @@ class Simulation:
 
         self.ROCKET = Rocket()
         self.ENVIRONMENT = Environment((WINDOW_WIDTH, WINDOW_HEIGHT))
-        self.SETUP = Setup((WINDOW_WIDTH, WINDOW_HEIGHT))
+        self.SETUP = Setup((WINDOW_WIDTH, WINDOW_HEIGHT), self.ROCKET)
         self.SETUP.create_rect_for_values()
 
         self.current_screen = "setup"
@@ -43,6 +43,16 @@ class Simulation:
                     if event.type == pygame.MOUSEBUTTONDOWN:
                         self.SETUP.check_event_edit_variable(pygame.mouse.get_pos())
 
+                        for key, value in self.SETUP.buttons.items():
+                            if value.collidepoint(pygame.mouse.get_pos()):
+                                if key == "reset":
+                                    self.SETUP.variables = self.SETUP.variables_for_reset
+                                if key == "launch":
+                                    self.ROCKET.set_parameters(self.SETUP.variables)
+                                    self.ROCKET.reset()
+                                    self.current_screen = "simulation"
+                    
+
                     if event.type == pygame.KEYDOWN:
                         self.SETUP.edit_variable(event)
  
@@ -70,4 +80,4 @@ class Simulation:
         """ Setup all variables changable by the user before start simulation
         """
         self.screen.fill("white")
-        self.SETUP.run(self.screen)
+        self.SETUP.run(self.screen, self.clock)

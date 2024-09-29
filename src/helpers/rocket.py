@@ -82,7 +82,6 @@ class RocketCalculation:
             self.current_fuel -= self.fuel_burnt
 
 
-
 class Rocket(pygame.sprite.Sprite, RocketCalculation):
     def __init__(self):
         self.size = pygame.Vector2(10, 80)
