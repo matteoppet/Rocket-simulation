@@ -5,20 +5,19 @@ class Setup:
     def __init__(self, window_size, rocket):
         self.rocket = rocket
 
-        path_font_regular = "../assets/font/OpenSans-Light.ttf"
-        path_font_bold = "../assets/font/OpenSans-SemiBold.ttf"
-
+        #path_font_regular = "../assets/font/OpenSans-Light.ttf"
+        path_font_regular = "../assets/font/NotoSans-Light.ttf"
+        path_font_bold = "../assets/font/NotoSans-SemiBold.ttf"
+        
+        self.font_title_application = pygame.font.Font(path_font_bold, 35)
         self.font_titles = pygame.font.Font(path_font_bold, 25)
         self.font_texts = pygame.font.Font(path_font_regular, 16)
         self.font_buttons = pygame.font.Font(path_font_regular, 14)
+        self.font_buttons_bold = pygame.font.Font(path_font_bold, 14)
 
-        self.pad_bottom_texts = 35
-        self.pad_bottom_from_title_window = 55
-        self.pad_right_from_rect_field = 200
-
-        self.red_button_color = "#FF0000"
-        self.green_button_color = "#50D890"
-        self.black_background_button_color = "#272727"
+        self.pad_table = (6,2)
+        self.margin_table = (15,6)
+        self.id_count_stages = 1
 
         width_rect = window_size[0]
         height_rect = 30
@@ -31,251 +30,343 @@ class Setup:
             "value": None,
         }
 
-        self.variables = {
-            "environmental-settings": {
-                "rect_window": pygame.Rect(150, 100, 300, 300),
-                "variables": {
-                    "gravity": {
-                        "value": 9.81,
-                        "rect": None,
-                        "type": "m/s²"
-                    },
-                    "air-density-sea-level": {
-                        "value": 1.221,
-                        "rect": None,
-                        "type": "kg/m³"
-                    },
-                    "wind": {
-                        "value": 0,
-                        "rect": None,
-                        "type": None
-                    },
-                },
-            },
-            "rocket-specific-settings": {
-                "rect_window": pygame.Rect(550, 100, 300, 300),
-                "variables": {
-                        "dry-mass": {
-                        "value": 10.0,
-                        "rect": None,
-                        "type": "kg"
-                    },
-                    "fuel-mass": {
-                        "value": 0,
-                        "rect": None,
-                        "type": "kg"
-                    },
-                    "cd": {
-                        "value": 0.7,
-                        "rect": None,
-                        "type": None
-                    },
-                },
-            },
-            "engine-settings": {
-                "rect_window": pygame.Rect(950, 100, 300, 300),
-                "variables": {
-                        "name": {
-                        "value": "test_1",
-                        "rect": None,
-                        "type": None
-                    },
-                    "power": {
-                        "value": 120,
-                        "rect": None,
-                        "type": "N"
-                    },
-                    "isp": { 
-                        # (specific impulse) solid engine = 200-300 seconds, liquid engine = 300-450 change in get_mass_flow_rate
-                        "value": 300,
-                        "rect": None,
-                        "type": "s",
-                    },
-                    "thrust_vectoring": {
-                        # maximum angle by which the negine can gimbal
-                        "value": 0,
-                        "rect": None,
-                        "type": "°",
-                    },
-                    "num_engines": {
-                        "value": 0,
-                        "rect": None,
-                        "type": None
-                    }
-                },
-            },
-            "mission-specific-parameters": {
-                "rect_window": pygame.Rect(1350, 100, 300, 300),
-                "variables": {
-                    "target-altitude": {
-                        "value": None,
-                        "rect": None,
-                        "type": "m",
-                    },
-                    "target-orbit": {
-                        "value": None,
-                        "rect": None,
-                        "type": None,
-                    },
-                    "start-planet": {
-                        "value": None,
-                        "rect": None,
-                        "type": None,
-                    },
-                    "start-angle": {
-                        "value": 0,
-                        "rect": None,
-                        "type": "°"
-                    },
-                    "start-altitude": {
-                        "value": 0,
-                        "rect": None,
-                        "type": "m"
-                    },
-                },
-            },
+        self.rect_title_application = pygame.Rect(100, 50, 1600, 150)
+        self.line_divide_1 = pygame.Rect(100, 250, self.rect_title_application.width, 2)
+        self.line_divide_2 = pygame.Rect(100, 660, self.rect_title_application.width, 2)
+
+        self.current_stage_to_show = 1
+        self.window_rect_environment = pygame.Rect(150, 300, 300, 300)
+        self.environment_settings = {
+            "gravity": {"value": 9.81, "rect": ..., "type": 'm/s'},
+            "air density": {"value": 1.221, "rect": ..., "type": 'p'},
+            "wind velocity": {"value": 0, "rect": ..., "type": 'm/s'}
         }
-        self.create_rect_for_values()
-        self.systems = {
-            "NO-GO/GO system": {
-                "rect_window": pygame.Rect(500, 500, 300, 300),
-                "variables": {
-                    "environment": "NO-GO",
-                    "rocket": "GO",
-                    "engine": "NO-GO",
-                    "mission": "NO-GO"
-                }
-            },
+        
+        self.window_rect_rocket = pygame.Rect(550, 300, 300, 300)
+        self.rocket_settings = {
+            1: {
+                "dry mass": {"value": 0, "rect": ..., "type": "kg"},
+                "propellant mass": {"value": 0, "rect": ..., "type": "kg"},
+                "cd": {"value": 0.1, "rect": ..., "type": ""}
+            }
         }
+        
+        self.window_rect_engine = pygame.Rect(950, 300, 300, 300)
+        self.engine_settings = {
+            1: {
+                "engine identifier": {"value": "Default", "rect": ..., "type": ""},
+                "thrust power": {"value": 100, "rect": ..., "type": "N"},
+                "ISP": {"value": 300, "rect": ..., "type": "s"},
+                "thrust vector angle": {"value": 0, "rect": ..., "type": "°"},
+                "number engines": {"value": 1, "rect": ..., "type": ""}
+            }
+        }
+        
+        self.window_rect_mission = pygame.Rect(1350, 300, 300, 300)
+        self.mission_settings = {
+            "apogee": {"value": 0, "rect": ..., "type": "m"},
+            "target": {"value": "Test", "rect": ..., "type": ""},
+            "launch planet": {"value": "Earth", "rect": ..., "type": ""},
+            "initial flight angle": {"value": 0, "rect": ..., "type": "°"},
+            "launch altitude": {"value": 0, "rect": ..., "type": "m"}
+        }
+        
+        self.rect_second_view = pygame.Rect(150, 700, 900, 250)
+        self.rect_lsc_monitor = pygame.Rect(1000, 700, 400, 250)
 
         self.buttons = {
-            "launch": pygame.Rect(window_size[0]-100, window_size[1]-100, 60, 40)
+            "launch status check": {
+                "environment": {'rect': '', 'status': False},
+                "rocket": {'rect': '', 'status': False},
+                "engine": {'rect': '', 'status': False},
+                "mission": {'rect': '', 'status': False},
+            },
+            "launch": ...,
+            "reset": ...,
+            "add_stage": ...,
+            "delete_stage": ...,
+            "edit_stage": {}
         }
 
-        self.problems_for_no_go = {}
 
-
-    def create_rect_for_values(self):
-        def place_values_by_window(name_window, rect_window, values):
-            start_y = rect_window.y+self.pad_bottom_from_title_window
-            start_x = rect_window.x+rect_window.width-90
-
-            width_rect_field = 50
-            height_rect_field = 25
-            for subkey, subvalue in values.items():
-                rect_value = pygame.Rect(start_x, start_y, width_rect_field, height_rect_field)
-                self.variables[name_window]["variables"][subkey]["rect"] = rect_value
-                start_y += self.pad_bottom_texts
-        
-        for key, value in self.variables.items():
-            place_values_by_window(key, self.variables[key]["rect_window"], self.variables[key]["variables"])
-                
-        
-    
     def run(self, screen, clock):
-        for key, value in self.variables.items():
-            # draw title window
-            self.draw_text(key.capitalize(), screen, self.font_titles, self.variables[key]["rect_window"].topleft)
+        margin = 35
+        size_input_value = pygame.Vector2(85, 23)
 
-            # draw: variable, rect background value, values inside, type of the value
-            for subkey in self.variables[key]["variables"].keys():
-                # draw variable
-                pos_subkey = (
-                    self.variables[key]["variables"][subkey]["rect"].topleft[0]-self.pad_right_from_rect_field,
-                    self.variables[key]["variables"][subkey]["rect"].topleft[1]
-                ) 
-                self.draw_text(subkey, screen, self.font_texts, pos_subkey)
+        # title application 
+        pygame.draw.rect(screen, "#4379F2", self.rect_title_application)
+        pos_text_title = (self.rect_title_application.topleft[0]+45, self.rect_title_application[1]+45)
+        self.draw_text("Rocket Simulation", screen, "black", self.font_title_application, pos_text_title)
 
-                # draw rect field (and background)
-                self.draw_rect_field(screen, "white", self.variables[key]["variables"][subkey]["rect"])
-                # draw value inside rect field
-                self.draw_text(
-                    f"{self.variables[key]['variables'][subkey]['value']}",
-                    screen, self.font_texts, (self.variables[key]["variables"][subkey]["rect"].topleft[0]+2, self.variables[key]["variables"][subkey]["rect"].topleft[1])
-                )
-                # draw type of the value outside rect field
-                if self.variables[key]['variables'][subkey]['type'] != None:
-                    pos = (
-                        self.variables[key]['variables'][subkey]['rect'].topright[0]+5,
-                        self.variables[key]['variables'][subkey]['rect'].topright[1]
-                    )
-                    self.draw_text(
-                        self.variables[key]['variables'][subkey]['type'], screen, self.font_texts, pos
-                    )
+        pygame.draw.rect(screen, "black", self.line_divide_1)
+        pygame.draw.rect(screen, "black", self.line_divide_2)
 
-        # draw windows systems dict
-        for key, value in self.systems.items():
-            self.draw_text(key.capitalize(), screen, self.font_titles, self.systems[key]["rect_window"].topleft)
+        # environment settings
+        self.draw_text("Environment Settings", screen, "black", self.font_titles, self.window_rect_environment.topleft)
+        size_title_environment = self.font_titles.size("Environment Settings")
+        pos_variables_environment = pygame.Vector2(self.window_rect_environment.left, self.window_rect_environment.top+size_title_environment[1]+margin)
+        pos_value_environment = pygame.Vector2(self.window_rect_environment.right, self.window_rect_environment.top+size_title_environment[1]+margin)
+        for variable, dict_value in self.environment_settings.items():
+            rect_value = pygame.Rect(pos_value_environment.x-size_input_value.x+4, pos_value_environment.y, size_input_value.x+4, size_input_value.y+4) 
+            self.environment_settings[variable]["rect"] = rect_value
 
-            start_y_subvalue_systems = self.systems[key]["rect_window"].topleft[1]+self.pad_bottom_from_title_window
-            for subkey, subvalue in self.systems[key]["variables"].items():
-                self.draw_text(subkey, screen, self.font_texts, ( self.systems[key]["rect_window"].topleft[0], start_y_subvalue_systems))
-                rect_value = pygame.Rect(self.systems[key]["rect_window"].topleft[0]+self.pad_right_from_rect_field, start_y_subvalue_systems, 50, 30)
+            self.draw_variables_inside_each_windoW(screen, rect_value, variable, f"{dict_value['value']} {dict_value['type']}", pos_variables_environment)
 
-                if subvalue.upper() == "NO-GO":
-                    self.draw_rect_field(screen, self.red_button_color, rect_value)
-                    self.draw_text(subvalue.upper(), screen, self.font_buttons, (rect_value.topleft[0]+2, rect_value.topleft[1]+4))
-                if subvalue.upper() == "GO":
-                    self.draw_rect_field(screen, self.green_button_color, rect_value)
-                    self.draw_text(subvalue.upper(), screen, self.font_buttons, (rect_value.topleft[0]+14, rect_value.topleft[1]+4))
+            pos_value_environment.y += margin
+            pos_variables_environment.y += margin
+        rect_go_button_environment = pygame.Rect(pos_variables_environment.x, pos_variables_environment.y+margin, self.window_rect_environment.width, 30)
+        self.draw_rect_field(screen, "white", rect_go_button_environment)
+        if not self.buttons["launch status check"]["environment"]["rect"]:
+            self.buttons["launch status check"]["environment"]["rect"] = rect_go_button_environment
+        self.draw_text("GO", screen, "black", self.font_buttons, (rect_go_button_environment.centerx-self.font_buttons.size("GO")[0]/2, rect_go_button_environment.centery-10))
 
-                self.validation_variables()
+        # rocket settings
+        self.draw_text("Rocket Settings", screen, "black", self.font_titles, self.window_rect_rocket.topleft)
+        size_title_rocket = self.font_titles.size("Rocket Settings")
+        self.draw_text(str(self.current_stage_to_show), screen, "black", self.font_texts, self.window_rect_rocket.topright)
+        pos_variables_rocket = pygame.Vector2(self.window_rect_rocket.left, self.window_rect_rocket.top+size_title_rocket[1]+margin)
+        pos_value_rocket = pygame.Vector2(self.window_rect_rocket.right, self.window_rect_rocket.top+size_title_rocket[1]+margin)
+        for variable, dict_value in self.rocket_settings[self.current_stage_to_show].items():
+            rect_value = pygame.Rect(pos_value_rocket.x-size_input_value.x+4, pos_value_rocket.y, size_input_value.x+4, size_input_value.y+4) 
+            self.rocket_settings[self.current_stage_to_show][variable]["rect"] = rect_value
 
-                start_y_subvalue_systems += self.pad_bottom_texts
+            self.draw_variables_inside_each_windoW(screen, rect_value, variable, f"{dict_value['value']} {dict_value['type']}", pos_variables_rocket)
 
+            pos_variables_rocket.y += margin
+            pos_value_rocket.y += margin
+        rect_go_button_rocket = pygame.Rect(pos_variables_rocket.x, pos_variables_rocket.y+margin, self.window_rect_rocket.width, 30)
+        self.draw_rect_field(screen, "white", rect_go_button_rocket)
+        if not self.buttons["launch status check"]["rocket"]["rect"]:
+            self.buttons["launch status check"]["rocket"]["rect"] = rect_go_button_rocket
+        self.draw_text("GO", screen, "black", self.font_buttons, (rect_go_button_rocket.centerx-self.font_buttons.size("GO")[0]/2, rect_go_button_rocket.centery-10))
 
-        self.draw_rect_field(screen, "white", self.rect_input_user_field)
-        self.draw_text(f"> {self.user_new_value}", screen, self.font_texts, (self.rect_input_user_field.x, self.rect_input_user_field.y+3))
-
-        # draw other buttons
-        for key, value in self.buttons.items():
-            if key == "reset":
-                self.draw_rect_field(screen, self.red_button_color, value)
-            else:
-                self.draw_rect_field(screen, self.green_button_color, value)
             
-            text_button = self.font_buttons.render(key, True, self.black_background_button_color)
-            screen.blit(text_button, (value.topleft[0]+8, value.topleft[1]+9))
+        # engine settings
+        self.draw_text("Engine Settings", screen, "black", self.font_titles, self.window_rect_engine.topleft)
+        size_title_engine = self.font_titles.size("Rocket Settings")
+        self.draw_text(str(self.current_stage_to_show), screen, "black", self.font_texts, self.window_rect_engine.topright)
+        pos_variables_engine = pygame.Vector2(self.window_rect_engine.left, self.window_rect_engine.top+size_title_engine[1]+margin)
+        pos_value_engine = pygame.Vector2(self.window_rect_engine.right, self.window_rect_engine.top+size_title_engine[1]+margin)
+        for variable, dict_value in self.engine_settings[self.current_stage_to_show].items():
+            rect_value = pygame.Rect(pos_value_engine.x-size_input_value.x+4, pos_value_engine.y, size_input_value.x+4, size_input_value.y+4) 
+            self.engine_settings[self.current_stage_to_show][variable]["rect"] = rect_value
+
+            self.draw_variables_inside_each_windoW(screen, rect_value, variable, f"{dict_value['value']} {dict_value['type']}", pos_variables_engine)
+
+            pos_variables_engine.y += margin
+            pos_value_engine.y += margin
+        rect_go_button_engine = pygame.Rect(pos_variables_engine.x, pos_variables_engine.y+margin, self.window_rect_engine.width, 30)
+        self.draw_rect_field(screen, "white", rect_go_button_engine)
+        if not self.buttons["launch status check"]["engine"]["rect"]:
+            self.buttons["launch status check"]["engine"]["rect"] = rect_go_button_engine
+        self.draw_text("GO", screen, "black", self.font_buttons, (rect_go_button_engine.centerx-self.font_buttons.size("GO")[0]/2, rect_go_button_engine.centery-10))
+
+
+        # mission settings
+        self.draw_text("Mission Settings", screen, "black", self.font_titles, self.window_rect_mission.topleft)
+        size_title_mission = self.font_titles.size("Rocket Settings")
+        pos_variables_mission = pygame.Vector2(self.window_rect_mission.left, self.window_rect_mission.top+size_title_mission[1]+margin)
+        pos_value_mission = pygame.Vector2(self.window_rect_mission.right, self.window_rect_mission.top+size_title_mission[1]+margin)
+        for variable, dict_value in self.mission_settings.items():
+            rect_value = pygame.Rect(pos_value_mission.x-size_input_value.x+4, pos_value_mission.y, size_input_value.x+4, size_input_value.y+4) 
+            self.mission_settings[variable]["rect"] = rect_value
+
+            self.draw_variables_inside_each_windoW(screen, rect_value, variable, f"{dict_value['value']} {dict_value['type']}", pos_variables_mission)
+
+            pos_variables_mission.y += margin
+            pos_value_mission.y += margin
+        rect_go_button_mission = pygame.Rect(pos_variables_mission.x, pos_variables_mission.y+margin, self.window_rect_mission.width, 30)
+        self.draw_rect_field(screen, "white", rect_go_button_mission)
+        if not self.buttons["launch status check"]["mission"]["rect"]:
+            self.buttons["launch status check"]["mission"]["rect"] = rect_go_button_mission
+        self.draw_text("GO", screen, "black", self.font_buttons, (rect_go_button_mission.centerx-self.font_buttons.size("GO")[0]/2, rect_go_button_mission.centery-10))
+        
+        # second view
+        self.draw_table_bottom_window(screen)
+
+        # launch status check
+        self.draw_launch_status_check(screen)
+
+        # draw rect input field bottom
+        self.draw_rect_field(screen, "white", self.rect_input_user_field)
+        self.draw_text(self.user_new_value, screen, "black", self.font_texts, (self.rect_input_user_field.left+3, self.rect_input_user_field.top+2))
+
+        # launch button
+        size_text_launch = self.font_buttons.size("Launch")
+        rect_launch_button = pygame.Rect(1500,800, size_text_launch[0]+self.margin_table[0], size_text_launch[1]+self.margin_table[1])
+        self.buttons["launch"] = rect_launch_button
+        self.draw_rect_field(screen, "green", rect_launch_button)
+        self.draw_text("Launch", screen, "black", self.font_buttons, (rect_launch_button.left+self.pad_table[0], rect_launch_button.top+self.pad_table[1]))
+
+        # FPS
+        self.draw_text(round(clock.get_fps(),1), screen, "black", self.font_texts, (10, 10))
+
+
+    def draw_launch_status_check(self, screen):
+        self.draw_text("Launch status check", screen, "black", self.font_titles, self.rect_lsc_monitor.topleft)
+
+        size_text_name_monitor = self.font_buttons_bold.size("environment")
+        size_text_status = self.font_buttons.size("NO-GO")
+        start_pos = pygame.Vector2(self.rect_lsc_monitor.left, self.rect_lsc_monitor.top+self.font_titles.size("Launch status check")[1]+35)
+        for monitor in self.buttons["launch status check"].keys():
+            rect_name_monitor = pygame.Rect(start_pos, (size_text_name_monitor[0]+self.margin_table[0], size_text_name_monitor[1]+self.margin_table[1]))
+            self.draw_rect_field(screen, "white", rect_name_monitor)
+            self.draw_text(monitor, screen, "black", self.font_buttons_bold, (rect_name_monitor.left+self.pad_table[0], rect_name_monitor.top+self.pad_table[1]))
+
+            status = self.buttons['launch status check'][monitor]['status']
+            rect_status = pygame.Rect((start_pos.x+rect_name_monitor.width, start_pos.y), (size_text_status[0]+self.margin_table[0], size_text_status[1]+self.margin_table[1]))
+            if status:
+                self.draw_rect_field(screen, "green", rect_status)
+                self.draw_text("GO", screen, "black", self.font_buttons, (rect_status.left+self.pad_table[0], rect_status.top+self.pad_table[1]))
+            else:
+                self.draw_rect_field(screen, "#ff3d3d", rect_status)
+                self.draw_text("NO-GO", screen, "black", self.font_buttons, (rect_status.left+self.pad_table[0], rect_status.top+self.pad_table[1]))
+
+            start_pos.y += rect_name_monitor.height
+
+
+    def draw_table_bottom_window(self, screen):
+        table_variables = {
+            "delta-v": 0,
+            "cd": 0,
+            "engine identifier": self.engine_settings,
+            "propellant mass": self.rocket_settings,
+            "dry mass": self.rocket_settings,
+            "total mass": 0
+        }
+
+        # draw first cell 
+        size_text_first_cell = self.font_buttons_bold.size("Stage")
+        rect_first_cell = pygame.Rect(self.rect_second_view.left+10, self.rect_second_view.top+10, size_text_first_cell[0]+self.margin_table[0], size_text_first_cell[1]+self.margin_table[1])
+        self.draw_rect_field(screen, "white", rect_first_cell)
+        self.draw_text("Stage", screen, "black", self.font_buttons_bold, (rect_first_cell.left+self.pad_table[0], rect_first_cell.top+self.pad_table[1]))
+
+        # draw horizontal title cells
+        start_pos_horizontal_title = pygame.Vector2(rect_first_cell.right+1, rect_first_cell.top)
+        for name_var in table_variables:
+            size_text = self.font_buttons_bold.size(name_var)
+            rect_text = pygame.Rect(start_pos_horizontal_title.x, start_pos_horizontal_title.y, size_text[0]+self.margin_table[0], size_text[1]+self.margin_table[1])
+            self.draw_rect_field(screen, "white", rect_text)
+            self.draw_text(name_var, screen, "black", self.font_buttons_bold, (rect_text.left+self.pad_table[0], rect_text.top+self.pad_table[1]))
+
+            start_pos_horizontal_title.x += rect_text.width+1
+
+        # draw vertical cells and each value 
+        start_pos_vertical_stage_num = pygame.Vector2(rect_first_cell.left, rect_first_cell.bottom+1)
+        start_pos_internal_values = pygame.Vector2(rect_first_cell.right+1, rect_first_cell.bottom+1)
+        for number_stage in range(1, self.id_count_stages+1):
+            rect_num_stage = pygame.Rect(start_pos_vertical_stage_num, rect_first_cell.size)
+            if number_stage == self.current_stage_to_show: color = "white"
+            else: color = "#dddddd"
+
+            self.draw_rect_field(screen, color, rect_num_stage)
+            self.draw_text(str(number_stage), screen, "black", self.font_buttons_bold, rect_num_stage.topleft)
+            self.buttons["edit_stage"][number_stage] = rect_num_stage
+
+            for variable, dictionary in table_variables.items():
+                if isinstance(dictionary, dict): value = self.get_value_based_on_the_stage(dictionary, variable, number_stage)
+                else: 
+                    if variable == "total mass":
+                        value = self.get_value_based_on_the_stage(self.rocket_settings, "dry mass", number_stage) + self.get_value_based_on_the_stage(self.rocket_settings, "propellant mass", number_stage)
+                    else:
+                        value = dictionary
+
+                size_rect = self.font_buttons_bold.size(variable)
+                rect_value = pygame.Rect(start_pos_internal_values, (size_rect[0]+self.margin_table[0], size_rect[1]+self.margin_table[1]))
+                self.draw_rect_field(screen, color, rect_value)
+                self.draw_text(value, screen, "black", self.font_buttons, start_pos_internal_values)
+
+                start_pos_internal_values.x += rect_value.width+1
+        
+            start_pos_vertical_stage_num.y += rect_num_stage.height+1
+            start_pos_internal_values.y += rect_num_stage.height+1
+            start_pos_internal_values.x = rect_first_cell.right+1
+
+        # buttons
+        button_add_new_stage = pygame.Rect(start_pos_vertical_stage_num, rect_first_cell.size)
+        self.buttons["add_stage"] = button_add_new_stage
+        self.draw_rect_field(screen, "green", button_add_new_stage)
+
+        button_delete_stage = pygame.Rect(button_add_new_stage.right+1, button_add_new_stage.top, button_add_new_stage.width, button_add_new_stage.height)
+        self.buttons["delete_stage"] = button_delete_stage
+        self.draw_rect_field(screen, "red", button_delete_stage)
+
+
+    def get_value_based_on_the_stage(self, dict, variable, current_stage):
+        return dict[current_stage][variable]["value"]
 
 
     def draw_rect_field(self, screen, color, rect_hover):
         rect_background = pygame.Rect(rect_hover.topleft[0]-1, rect_hover.topleft[1]-1, rect_hover.width+2, rect_hover.height+2)
-        pygame.draw.rect(screen, self.black_background_button_color, rect_background)
+        pygame.draw.rect(screen, "black", rect_background)
         pygame.draw.rect(screen, color, rect_hover)
 
 
-    def draw_text(self, text, screen, font, pos):
-        text_render = font.render(text, True, self.black_background_button_color)
+    def draw_variables_inside_each_windoW(self, screen, rect_value, text_variable, text_value, pos_variables):
+        self.draw_text(text_variable, screen, "black", self.font_texts, pos_variables)
+        self.draw_rect_field(screen, "white", rect_value)
+        self.draw_text(text_value, screen, "black", self.font_buttons, (rect_value.left+3, rect_value.top+3))
+
+
+    def draw_text(self, text, screen, color, font, pos):
+        text_render = font.render(str(text), True, color)
         screen.blit(text_render, pos)
 
 
     def check_event_edit_variable(self, mouse_pos):
-        for key in self.variables.keys():
-            for subkey in self.variables[key]["variables"].keys():
-                if self.variables[key]["variables"][subkey]["rect"].collidepoint(mouse_pos):
-                    self.input_field_values["window"] = key
-                    self.input_field_values["name_var"] = subkey
-                    self.input_field_values["value"] = self.variables[key]["variables"][subkey]["value"]
-                    self.user_new_value = f"{self.input_field_values['name_var']}: {self.input_field_values['value']}"
+        def set_value(name_monitor, dict_monitor):
+            for key, dict_value in dict_monitor.items():
+                if dict_value["rect"].collidepoint(mouse_pos):
+                    self.input_field_values["window"] = name_monitor
+                    self.input_field_values["name_var"] = key 
+                    self.input_field_values["value"] = dict_value["value"]
                     break
+
+            self.user_new_value = f"{self.input_field_values['name_var']}: {self.input_field_values['value']}"
+
+        if self.window_rect_environment.collidepoint(mouse_pos):
+            set_value("environment", self.environment_settings)
+
+        elif self.window_rect_rocket.collidepoint(mouse_pos):
+            set_value("rocket", self.rocket_settings[self.current_stage_to_show])
+
+        elif self.window_rect_engine.collidepoint(mouse_pos):
+            set_value("engine", self.engine_settings[self.current_stage_to_show])
+
+        elif self.window_rect_mission.collidepoint(mouse_pos):
+            set_value("mission", self.mission_settings)
 
 
     def edit_variable(self, event):
         def process_text_from_input(text):
-            text, value = text.split(" ")
+            text, value = text.split(": ")
             try:
                 value = float(value)
-                self.variables[self.input_field_values["window"]]["variables"][self.input_field_values["name_var"]]["value"] = value
-                self.user_new_value = ''
-                self.input_field_values["window"] = None
-                self.input_field_values["name_var"] = None
-                self.input_field_values["value"] = None
             except ValueError:
-                print("Not working")
-        
+                value = str(value)
+
+            if self.input_field_values["window"] == "environment":
+                self.environment_settings[self.input_field_values["name_var"]]["value"] = value
+                self.buttons["launch status check"]["environment"]["status"] = False
+            elif self.input_field_values["window"] == "rocket":
+                self.rocket_settings[self.current_stage_to_show][self.input_field_values["name_var"]]["value"] = value
+                self.buttons["launch status check"]["rocket"]["status"] = False
+            elif self.input_field_values["window"] == "engine":
+                self.engine_settings[self.current_stage_to_show][self.input_field_values["name_var"]]["value"] = value
+                self.buttons["launch status check"]["engine"]["status"] = False
+            elif self.input_field_values["window"] == "mission":
+                self.mission_settings[self.input_field_values["name_var"]]["value"] = value
+                self.buttons["launch status check"]["mission"]["status"] = False
+            
+            self.input_field_values = self.input_field_values.fromkeys(self.input_field_values, None)
+            self.user_new_value = ''
+ 
+
         if event.key == pygame.K_BACKSPACE:
-            if len(self.user_new_value) > len(self.input_field_values["name_var"])+2:
-                self.user_new_value = self.user_new_value[:-1]
+            try:
+                if len(self.user_new_value) > len(self.input_field_values["name_var"])+2:
+                    self.user_new_value = self.user_new_value[:-1]
+            except TypeError: pass
         elif event.key == pygame.K_RETURN:
             if self.input_field_active:
                 self.input_field_active = False
@@ -285,19 +376,55 @@ class Setup:
             self.user_new_value += event.unicode
 
 
-    def validation_variables(self):
-        for key in self.variables.keys():
-            for subkey in self.variables[key]["variables"].keys():
-                # negative values
-                try:
-                    value = int(self.variables[key]["variables"][subkey]["value"])
-                    if value < 0:
-                        self.problems_for_no_go[key] = f"{subkey} has a negative number."
-                except Exception as e:
-                    pass
-                
-                # power engine too low for the rocket
-                downwards_power = self.variables["rocket-specific-settings"]["variables"]["dry-mass"]["value"]*self.variables["environmental-settings"]["variables"]["gravity"]["value"]
-                power_engine = self.variables["engine-settings"]["variables"]["power"]["value"]
-                if subkey == "power" and key == "engine-settings" and downwards_power > power_engine:
-                    self.problems_for_no_go[key] = f"Thrust power too low for the weight of the rocket: {round(power_engine-downwards_power, 1)}"
+    def validation_monitor(self, monitor):
+        def check_value_below_0(value):
+            if value < 0:
+                return True
+            return False
+        
+        problem = False
+            
+        if monitor == "environment":
+            for variable in self.environment_settings.keys():
+                problem = check_value_below_0(self.environment_settings[variable]["value"])
+                if problem: break
+
+            if not problem: self.buttons['launch status check'][monitor]['status'] = True
+
+        elif monitor == "rocket":
+            for variable in self.rocket_settings[self.current_stage_to_show].keys():
+                value = self.rocket_settings[self.current_stage_to_show][variable]["value"]
+
+                if check_value_below_0(value) or value == 0: problem = True
+                if problem: break
+
+            if not problem: self.buttons['launch status check'][monitor]['status'] = True
+
+        elif monitor == "engine": 
+            for variable in self.engine_settings[self.current_stage_to_show].keys():
+                value = self.engine_settings[self.current_stage_to_show][variable]["value"]
+
+                if variable not in ["thrust vector angle", "engine identifier"]: 
+                    problem = check_value_below_0(value)
+                    if problem: break
+
+                if variable == "thrust power":
+                    current_mass = self.rocket_settings[self.current_stage_to_show]["dry mass"]["value"] + self.rocket_settings[self.current_stage_to_show]["propellant mass"]["value"]
+                    gravity = self.environment_settings["gravity"]["value"]
+                    vertical_weight = current_mass * gravity
+
+                    if float(vertical_weight) > float(value):
+                        problem = True
+                        break
+
+            if not problem: self.buttons['launch status check'][monitor]['status'] = True
+            
+
+        elif monitor == "mission":
+            for variable in self.mission_settings.keys():
+                if variable in ["launch altitude", "apogee"]:
+                    problem = check_value_below_0(self.mission_settings[variable]["value"])
+                    if problem:
+                        break
+
+            if not problem: self.buttons['launch status check'][monitor]['status'] = True

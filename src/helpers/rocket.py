@@ -97,20 +97,23 @@ class Rocket(pygame.sprite.Sprite, RocketCalculation):
         self.copy_image_thrust = self.image_thrust.copy()
 
 
-    def set_parameters(self, parameters_dict):
-        self.gravity = parameters_dict["environmental-settings"]["variables"]["gravity"]["value"]
-        self.air_density_sea_level = parameters_dict["environmental-settings"]["variables"]["air-density-sea-level"]["value"]
+    def set_parameters(self, rocket_settings, environment_settings, engine_settings, mission_settings):
+        # do stage after
+        current_stage = 1
+        
+        self.drag_coeff = rocket_settings[current_stage]["cd"]["value"]
+        self.initial_dry_mass = rocket_settings[current_stage]["dry mass"]["value"]
+        self.initial_fuel_mass = rocket_settings[current_stage]["propellant mass"]["value"]
 
-        self.drag_coeff = parameters_dict["rocket-specific-settings"]["variables"]["cd"]["value"]
-        self.initial_dry_mass = parameters_dict["rocket-specific-settings"]["variables"]["dry-mass"]["value"]
-        self.initial_fuel_mass = parameters_dict["rocket-specific-settings"]["variables"]["fuel-mass"]["value"]
+        self.gravity = environment_settings["gravity"]["value"]
+        self.air_density_sea_level = environment_settings["air density"]["value"]
 
-        self.isp = parameters_dict["engine-settings"]["variables"]["isp"]["value"]
-        self.max_thrust_power = parameters_dict["engine-settings"]["variables"]["power"]["value"]
-        self.thrust_vectoring = parameters_dict["engine-settings"]["variables"]["thrust_vectoring"]["value"]
+        self.isp = engine_settings[current_stage]["ISP"]["value"] # TODO more engine calculation
+        self.max_thrust_power = engine_settings[current_stage]["thrust power"]["value"]
+        self.thrust_vectoring = engine_settings[current_stage]["thrust vector angle"]["value"]
 
-        self.initial_rocket_angle = parameters_dict["mission-specific-parameters"]["variables"]["start-angle"]["value"]
-        self.initial_altitude = parameters_dict["mission-specific-parameters"]["variables"]["start-altitude"]["value"]
+        self.initial_altitude = mission_settings["launch altitude"]["value"]
+        self.initial_rocket_angle = mission_settings["initial flight angle"]["value"]
 
     def reset(self):
         self.position = pygame.Vector2(self.temp_start_pos.x, self.initial_altitude)
