@@ -83,14 +83,14 @@ class RocketCalculation:
 
 
 class Rocket(pygame.sprite.Sprite, RocketCalculation):
-    def __init__(self):
-        self.size = pygame.Vector2(10, 80)
-        self.temp_start_pos = pygame.Vector2(200, 930)
-
-        # Rocket
+    def __init__(self, base_rect_pos):
         self.image = pygame.image.load("../assets/images/prototype.png").convert_alpha()
         self.copy_image = self.image.copy()
-        self.rect = self.image.get_rect(center=(self.temp_start_pos.x, self.temp_start_pos.y))
+        self.rect = self.image.get_rect(center=(0,0))
+
+        print(self.image.get_size())
+        self.size = pygame.Vector2(self.image.get_size())
+        self.temp_start_pos = pygame.Vector2(300, base_rect_pos[1]+40-self.size.y)
 
         # Thrust = gimbaled
         self.image_thrust = pygame.image.load("../assets/images/thrust.png").convert_alpha()
@@ -115,8 +115,8 @@ class Rocket(pygame.sprite.Sprite, RocketCalculation):
         self.initial_altitude = mission_settings["launch altitude"]["value"]
         self.initial_rocket_angle = mission_settings["initial flight angle"]["value"]
 
-    def reset(self):
-        self.position = pygame.Vector2(self.temp_start_pos.x, self.initial_altitude)
+    def reset(self, launch_platform_rect):
+        self.position = pygame.Vector2(launch_platform_rect.x+launch_platform_rect.width/2, launch_platform_rect.y-self.size.y+self.size.y/2)
         self.direction = pygame.Vector2(0,0)
 
         self.rocket_angle = self.initial_rocket_angle
@@ -186,7 +186,7 @@ class Rocket(pygame.sprite.Sprite, RocketCalculation):
         rotated_image_thrust = pygame.transform.rotate(self.copy_image_thrust, self.gimbal_angle+90)
         screen.blit(rotated_image_thrust, (self.rect.x, self.rect.y+self.size.y))
 
-    def run(self, dt):
+    def run(self, dt, rect_collide):
         self.current_thrust_power = self.get_current_thrust_power
         
         if self.get_weight.y > self.max_thrust_power:
@@ -207,3 +207,5 @@ class Rocket(pygame.sprite.Sprite, RocketCalculation):
         self.position -= self.velocity
         self.rect.center = self.position
         self.direction.y = self.velocity.y
+
+        self.collision(rect_collide)

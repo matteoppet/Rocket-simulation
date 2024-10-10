@@ -3,24 +3,25 @@ from math import exp
 
 class Environment:
     def __init__(self, window_size):
-        self.rects_environment = {
-            "water": None,
-            "platform": None
-        }
+        self.window_size = window_size
+        self.base_terrain = pygame.Rect(0, self.window_size[1]-10, self.window_size[0], 10)
 
-        self.planets_data = {
-            "earth": {
-                "gravity": 9.81,
-                "drag_coeff": 0.1,
-                "air_density_sea_level": 1.225,
-                "scale_height": 7000,
-            },
-        }
+    def create_environment(self, setup_dict):
+        launch_altitude = setup_dict["launch altitude"]["value"]
+        initial_angle = setup_dict["initial flight angle"]["value"]
 
-        self.create_water(window_size[0], 20, 0, window_size[1]-20)
-        self.create_platform(150, 15, 150, window_size[1]-30)
+        self.launch_platform_rect = pygame.Rect(800, self.window_size[1]-20-launch_altitude, 100, 10)
 
-        self.current_world = "earth"
+        altitude_poles = self.base_terrain.y-self.launch_platform_rect.bottomleft[1]
+        self.launch_platform_pole_1 = pygame.Rect(self.launch_platform_rect.x, self.launch_platform_rect.bottomleft[1], 10, altitude_poles)
+        self.launch_platform_pole_2 = pygame.Rect(self.launch_platform_rect.topright[0]-self.launch_platform_rect.height, self.launch_platform_rect.bottomright[1], 10, altitude_poles)
+
+    def draw(self, screen):
+        pygame.draw.rect(screen, "black", self.base_terrain)
+
+        pygame.draw.rect(screen, "purple", self.launch_platform_rect)
+        pygame.draw.rect(screen, "purple", self.launch_platform_pole_1)
+        pygame.draw.rect(screen, "purple", self.launch_platform_pole_2)
 
 
     def update_forces(self, rocket_altitude, planet):
@@ -28,15 +29,3 @@ class Environment:
         current_air_density = self.planets_data[planet]["air_density_sea_level"] * exp(-rocket_altitude/self.planets_data[planet]["scale_height"])
 
         return current_gravity, current_air_density
-
-    def create_water(self, width, height, x, y):
-        self.rects_environment["water"] = pygame.Rect(x, y, width, height)
-
-    def create_platform(self, width, height, x, y):
-        self.rects_environment["platform"] = pygame.Rect(x, y, width, height)
-
-    def render_water(self, screen):
-        pygame.draw.rect(screen, "#acdeff", self.rects_environment["water"])
-
-    def render_platform(self, screen):
-        pygame.draw.rect(screen, "#333333", self.rects_environment["platform"])

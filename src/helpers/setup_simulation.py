@@ -45,8 +45,8 @@ class Setup:
         self.window_rect_rocket = pygame.Rect(550, 300, 300, 300)
         self.rocket_settings = {
             1: {
-                "dry mass": {"value": 0, "rect": ..., "type": "kg"},
-                "propellant mass": {"value": 0, "rect": ..., "type": "kg"},
+                "dry mass": {"value": 5, "rect": ..., "type": "kg"},
+                "propellant mass": {"value": 5, "rect": ..., "type": "kg"},
                 "cd": {"value": 0.1, "rect": ..., "type": ""}
             }
         }
@@ -76,10 +76,10 @@ class Setup:
 
         self.buttons = {
             "launch status check": {
-                "environment": {'rect': '', 'status': False},
-                "rocket": {'rect': '', 'status': False},
-                "engine": {'rect': '', 'status': False},
-                "mission": {'rect': '', 'status': False},
+                "environment": {'rect': '', 'status': True},
+                "rocket": {'rect': '', 'status': True},
+                "engine": {'rect': '', 'status': True},
+                "mission": {'rect': '', 'status': True},
             },
             "launch": ...,
             "reset": ...,

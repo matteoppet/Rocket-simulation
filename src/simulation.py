@@ -12,8 +12,8 @@ class Simulation:
 
         self.clock = pygame.time.Clock()
 
-        self.ROCKET = Rocket()
         self.ENVIRONMENT = Environment((WINDOW_WIDTH, WINDOW_HEIGHT))
+        self.ROCKET = Rocket(self.ENVIRONMENT.base_terrain.topleft)
         self.SETUP = Setup((WINDOW_WIDTH, WINDOW_HEIGHT), self.ROCKET)
 
         self.current_screen = "setup"
@@ -40,8 +40,10 @@ class Simulation:
                             status_list = [dict_values["status"] for dict_values in self.SETUP.buttons["launch status check"].values()]
 
                             if all(status_list):
+                                self.ENVIRONMENT.create_environment(self.SETUP.mission_settings)
+                                
                                 self.ROCKET.set_parameters(self.SETUP.rocket_settings, self.SETUP.environment_settings, self.SETUP.engine_settings, self.SETUP.mission_settings)
-                                self.ROCKET.reset()
+                                self.ROCKET.reset(self.ENVIRONMENT.launch_platform_rect)
                                 self.current_screen = "simulation"
 
                         # create stage button
@@ -49,7 +51,6 @@ class Simulation:
                             if self.SETUP.id_count_stages < 7:
                                 self.SETUP.id_count_stages += 1
                                 self.SETUP.current_stage_to_show = self.SETUP.id_count_stages
-                                # system this
                                 self.SETUP.rocket_settings[self.SETUP.id_count_stages] = {
                                         "dry mass": {"value": 0, "rect": ..., "type": "kg"},
                                         "propellant mass": {"value": 0, "rect": ..., "type": "kg"},
@@ -102,11 +103,11 @@ class Simulation:
         self.screen.fill("white")
         dt = self.clock.tick(60)/1000.0
 
-        self.ROCKET.controls(dt)
-        self.ROCKET.run(dt)
-        self.ROCKET.render(self.screen)
-        self.ROCKET.collision(self.ENVIRONMENT.rects_environment["platform"])
+        self.ENVIRONMENT.draw(self.screen)
 
+        self.ROCKET.controls(dt)
+        self.ROCKET.run(dt, self.ENVIRONMENT.launch_platform_rect)
+        self.ROCKET.render(self.screen)
 
     def setup(self):
         """ Setup all variables changable by the user before start simulation
