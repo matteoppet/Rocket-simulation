@@ -149,8 +149,9 @@ class Rocket(pygame.sprite.Sprite, RocketCalculation):
 
         # cut-on cut-off engine
         if keys[pygame.K_x]:
-            self.current_thrust_percentage = 100
-            self.started_burnt = pygame.time.get_ticks()
+            if self.current_fuel > 0:
+                self.current_thrust_percentage = 100
+                self.started_burnt = pygame.time.get_ticks()
         elif keys[pygame.K_z]:
             self.current_thrust_percentage = 0
             self.started_burnt = False
@@ -200,6 +201,8 @@ class Rocket(pygame.sprite.Sprite, RocketCalculation):
         self.calculate_angular_acceleration()
         self.calculate_angular_velocity(dt)
         self.calculate_drag()
+
+        print(self.current_fuel, self.current_thrust_power, self.acceleration, self.velocity)
 
         # update position and direction rocket
         angular_velocity_deg = self.angular_acceleration * (180 / math.pi)
