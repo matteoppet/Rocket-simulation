@@ -14,7 +14,7 @@ class RocketCalculation:
     
     @property
     def get_torque(self):
-        return self.get_current_thrust_power * 40 * math.sin(self.gimbal_angle)
+        return self.current_thrust_power * 40 * math.sin(math.radians(self.gimbal_angle))
     
     @property
     def get_inertia(self):
@@ -31,15 +31,19 @@ class RocketCalculation:
     
     @property
     def get_altitude(self): # TODO
-        return 1
+        return self.base_rect_pos[1] - self.position.y
 
     @property
     def get_mass_flow_rate(self):
-        return self.get_current_thrust_power/(self.isp * self.gravity)
+        return self.current_thrust_power/(self.isp * self.gravity)
     
     @property
     def get_current_thrust_power(self):
         return (self.current_thrust_percentage/100)*self.max_thrust_power
+    
+    @property
+    def get_total_thrust_angle(self):
+        return self.rocket_angle + self.gimbal_angle
 
     
     def calculate_acceleration(self):
@@ -55,14 +59,14 @@ class RocketCalculation:
 
     def calculate_angular_acceleration(self):
         # formula: torque/inertia
-        self.angular_acceration = self.get_torque / self.get_inertia
+        self.angular_acceleration = self.get_torque / self.get_inertia
 
     def calculate_angular_velocity(self, dt):
-        self.angular_velocity = self.angular_acceration * dt 
+        self.angular_velocity = self.angular_acceleration * dt 
     
     def calculate_drag(self):
         # formula: 1/2 * p * v**2 * Cd * A
-        drag_magnitude = 0.5 * self.get_air_density * (self.velocity.length()**2) * self.drag_coeff * self.get_cross_sectional_area
+        drag_magnitude = 0.5 * self.get_air_density * (self.velocity.magnitude()**2) * self.drag_coeff * self.get_cross_sectional_area
         if self.velocity.magnitude() != 0: drag_direction = self.velocity.normalize()
         else: drag_direction = pygame.Vector2(0, 0)
         drag_vector = drag_direction * drag_magnitude
@@ -84,11 +88,12 @@ class RocketCalculation:
 
 class Rocket(pygame.sprite.Sprite, RocketCalculation):
     def __init__(self, base_rect_pos):
+        self.base_rect_pos = base_rect_pos
+
         self.image = pygame.image.load("../assets/images/prototype.png").convert_alpha()
         self.copy_image = self.image.copy()
         self.rect = self.image.get_rect(center=(0,0))
 
-        print(self.image.get_size())
         self.size = pygame.Vector2(self.image.get_size())
         self.temp_start_pos = pygame.Vector2(300, base_rect_pos[1]+40-self.size.y)
 
@@ -166,19 +171,19 @@ class Rocket(pygame.sprite.Sprite, RocketCalculation):
         else:
             self.gimbal_angle = 0
 
-    def collision(self, rect):
+    def collision(self, group_rect):
         if self.direction.magnitude() != 0:
             self.direction = self.direction.normalize()
 
-        if rect.colliderect(self.rect):
-            if self.direction.y < 0:
+        for rect in group_rect:
+            if rect.colliderect(self.rect):
+                if self.direction.y < 0:
+                    self.rect.bottom = rect.top
+                    self.position.y = self.rect.bottom-self.size.y/2
+                    self.velocity = pygame.Vector2(0,0)
 
-                self.rect.bottom = rect.top
-                self.position.y = self.rect.bottom-self.size.y/2
-                self.velocity = pygame.Vector2(0,0)
-
-            if self.direction.y > 0:
-                self.rect.top = rect.bottom
+                if self.direction.y > 0:
+                    self.rect.top = rect.bottom
 
     def render(self, screen):
         rotated_image = pygame.transform.rotate(self.copy_image, self.rocket_angle)
@@ -187,22 +192,20 @@ class Rocket(pygame.sprite.Sprite, RocketCalculation):
         rotated_image_thrust = pygame.transform.rotate(self.copy_image_thrust, self.gimbal_angle+90)
         screen.blit(rotated_image_thrust, (self.rect.x, self.rect.y+self.size.y))
 
-    def run(self, dt, rect_collide):
+    def run(self, dt, group_rect):
         self.current_thrust_power = self.get_current_thrust_power
-        
-        if self.get_weight.y > self.max_thrust_power:
-            print("ERROR: Thrust power too lower for the weight of the rocket")
 
         self.calculate_mass_fuel_consumption()
-        self.thrust_vector = pygame.Vector2(0, self.current_thrust_power)
+
+        total_thrust_angle_radians = math.radians(self.get_total_thrust_angle)
+        thrust_x = self.current_thrust_power * math.sin(total_thrust_angle_radians)
+        thrust_y = self.current_thrust_power * math.cos(total_thrust_angle_radians)
+        self.thrust_vector = pygame.Vector2(thrust_x, thrust_y)
 
         self.calculate_acceleration()
         self.calculate_velocity(dt)
         self.calculate_angular_acceleration()
         self.calculate_angular_velocity(dt)
-        self.calculate_drag()
-
-        print(self.current_fuel, self.current_thrust_power, self.acceleration, self.velocity)
 
         # update position and direction rocket
         angular_velocity_deg = self.angular_acceleration * (180 / math.pi)
@@ -211,4 +214,4 @@ class Rocket(pygame.sprite.Sprite, RocketCalculation):
         self.rect.center = self.position
         self.direction.y = self.velocity.y
 
-        self.collision(rect_collide)
+        self.collision(group_rect)

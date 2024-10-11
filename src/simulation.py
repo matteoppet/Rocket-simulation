@@ -41,7 +41,7 @@ class Simulation:
 
                             if all(status_list):
                                 self.ENVIRONMENT.create_environment(self.SETUP.mission_settings)
-                                
+
                                 self.ROCKET.set_parameters(self.SETUP.rocket_settings, self.SETUP.environment_settings, self.SETUP.engine_settings, self.SETUP.mission_settings)
                                 self.ROCKET.reset(self.ENVIRONMENT.launch_platform_rect)
                                 self.current_screen = "simulation"
@@ -100,17 +100,16 @@ class Simulation:
 
     def simulation(self):
         """Run simulation with all the setup from before"""
-        self.screen.fill("white")
+        self.screen.fill("black")
         dt = self.clock.tick(60)/1000.0
 
         self.ENVIRONMENT.draw(self.screen)
 
         self.ROCKET.controls(dt)
-        self.ROCKET.run(dt, self.ENVIRONMENT.launch_platform_rect)
+        self.ROCKET.run(dt, [self.ENVIRONMENT.base_terrain, self.ENVIRONMENT.launch_platform_rect])
         self.ROCKET.render(self.screen)
 
     def setup(self):
         """ Setup all variables changable by the user before start simulation
         """
-        self.screen.fill("white")
         self.SETUP.run(self.screen, self.clock)

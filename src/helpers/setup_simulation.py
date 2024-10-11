@@ -5,7 +5,9 @@ class Setup:
     def __init__(self, window_size, rocket):
         self.rocket = rocket
 
-        #path_font_regular = "../assets/font/OpenSans-Light.ttf"
+        self.color_text = "black"
+        self.color_background = "white"
+
         path_font_regular = "../assets/font/NotoSans-Light.ttf"
         path_font_bold = "../assets/font/NotoSans-SemiBold.ttf"
         
@@ -93,16 +95,18 @@ class Setup:
         margin = 35
         size_input_value = pygame.Vector2(85, 23)
 
+        screen.fill(self.color_background)
+
         # title application 
         pygame.draw.rect(screen, "#4379F2", self.rect_title_application)
         pos_text_title = (self.rect_title_application.topleft[0]+45, self.rect_title_application[1]+45)
-        self.draw_text("Rocket Simulation", screen, "black", self.font_title_application, pos_text_title)
+        self.draw_text("Rocket Simulation", screen, self.color_text, self.font_title_application, pos_text_title)
 
         pygame.draw.rect(screen, "black", self.line_divide_1)
         pygame.draw.rect(screen, "black", self.line_divide_2)
 
         # environment settings
-        self.draw_text("Environment Settings", screen, "black", self.font_titles, self.window_rect_environment.topleft)
+        self.draw_text("Environment Settings", screen, self.color_text, self.font_titles, self.window_rect_environment.topleft)
         size_title_environment = self.font_titles.size("Environment Settings")
         pos_variables_environment = pygame.Vector2(self.window_rect_environment.left, self.window_rect_environment.top+size_title_environment[1]+margin)
         pos_value_environment = pygame.Vector2(self.window_rect_environment.right, self.window_rect_environment.top+size_title_environment[1]+margin)
@@ -115,15 +119,15 @@ class Setup:
             pos_value_environment.y += margin
             pos_variables_environment.y += margin
         rect_go_button_environment = pygame.Rect(pos_variables_environment.x, pos_variables_environment.y+margin, self.window_rect_environment.width, 30)
-        self.draw_rect_field(screen, "white", rect_go_button_environment)
+        self.draw_rect_field(screen, self.color_background, rect_go_button_environment)
         if not self.buttons["launch status check"]["environment"]["rect"]:
             self.buttons["launch status check"]["environment"]["rect"] = rect_go_button_environment
-        self.draw_text("GO", screen, "black", self.font_buttons, (rect_go_button_environment.centerx-self.font_buttons.size("GO")[0]/2, rect_go_button_environment.centery-10))
+        self.draw_text("GO", screen, self.color_text, self.font_buttons, (rect_go_button_environment.centerx-self.font_buttons.size("GO")[0]/2, rect_go_button_environment.centery-10))
 
         # rocket settings
-        self.draw_text("Rocket Settings", screen, "black", self.font_titles, self.window_rect_rocket.topleft)
+        self.draw_text("Rocket Settings", screen, self.color_text, self.font_titles, self.window_rect_rocket.topleft)
         size_title_rocket = self.font_titles.size("Rocket Settings")
-        self.draw_text(str(self.current_stage_to_show), screen, "black", self.font_texts, self.window_rect_rocket.topright)
+        self.draw_text(str(self.current_stage_to_show), screen, self.color_text, self.font_texts, self.window_rect_rocket.topright)
         pos_variables_rocket = pygame.Vector2(self.window_rect_rocket.left, self.window_rect_rocket.top+size_title_rocket[1]+margin)
         pos_value_rocket = pygame.Vector2(self.window_rect_rocket.right, self.window_rect_rocket.top+size_title_rocket[1]+margin)
         for variable, dict_value in self.rocket_settings[self.current_stage_to_show].items():
@@ -135,16 +139,16 @@ class Setup:
             pos_variables_rocket.y += margin
             pos_value_rocket.y += margin
         rect_go_button_rocket = pygame.Rect(pos_variables_rocket.x, pos_variables_rocket.y+margin, self.window_rect_rocket.width, 30)
-        self.draw_rect_field(screen, "white", rect_go_button_rocket)
+        self.draw_rect_field(screen, self.color_background, rect_go_button_rocket)
         if not self.buttons["launch status check"]["rocket"]["rect"]:
             self.buttons["launch status check"]["rocket"]["rect"] = rect_go_button_rocket
-        self.draw_text("GO", screen, "black", self.font_buttons, (rect_go_button_rocket.centerx-self.font_buttons.size("GO")[0]/2, rect_go_button_rocket.centery-10))
+        self.draw_text("GO", screen, self.color_text, self.font_buttons, (rect_go_button_rocket.centerx-self.font_buttons.size("GO")[0]/2, rect_go_button_rocket.centery-10))
 
             
         # engine settings
-        self.draw_text("Engine Settings", screen, "black", self.font_titles, self.window_rect_engine.topleft)
+        self.draw_text("Engine Settings", screen, self.color_text, self.font_titles, self.window_rect_engine.topleft)
         size_title_engine = self.font_titles.size("Rocket Settings")
-        self.draw_text(str(self.current_stage_to_show), screen, "black", self.font_texts, self.window_rect_engine.topright)
+        self.draw_text(str(self.current_stage_to_show), screen, self.color_text, self.font_texts, self.window_rect_engine.topright)
         pos_variables_engine = pygame.Vector2(self.window_rect_engine.left, self.window_rect_engine.top+size_title_engine[1]+margin)
         pos_value_engine = pygame.Vector2(self.window_rect_engine.right, self.window_rect_engine.top+size_title_engine[1]+margin)
         for variable, dict_value in self.engine_settings[self.current_stage_to_show].items():
@@ -156,14 +160,14 @@ class Setup:
             pos_variables_engine.y += margin
             pos_value_engine.y += margin
         rect_go_button_engine = pygame.Rect(pos_variables_engine.x, pos_variables_engine.y+margin, self.window_rect_engine.width, 30)
-        self.draw_rect_field(screen, "white", rect_go_button_engine)
+        self.draw_rect_field(screen, self.color_background, rect_go_button_engine)
         if not self.buttons["launch status check"]["engine"]["rect"]:
             self.buttons["launch status check"]["engine"]["rect"] = rect_go_button_engine
-        self.draw_text("GO", screen, "black", self.font_buttons, (rect_go_button_engine.centerx-self.font_buttons.size("GO")[0]/2, rect_go_button_engine.centery-10))
+        self.draw_text("GO", screen, self.color_text, self.font_buttons, (rect_go_button_engine.centerx-self.font_buttons.size("GO")[0]/2, rect_go_button_engine.centery-10))
 
 
         # mission settings
-        self.draw_text("Mission Settings", screen, "black", self.font_titles, self.window_rect_mission.topleft)
+        self.draw_text("Mission Settings", screen, self.color_text, self.font_titles, self.window_rect_mission.topleft)
         size_title_mission = self.font_titles.size("Rocket Settings")
         pos_variables_mission = pygame.Vector2(self.window_rect_mission.left, self.window_rect_mission.top+size_title_mission[1]+margin)
         pos_value_mission = pygame.Vector2(self.window_rect_mission.right, self.window_rect_mission.top+size_title_mission[1]+margin)
@@ -176,10 +180,10 @@ class Setup:
             pos_variables_mission.y += margin
             pos_value_mission.y += margin
         rect_go_button_mission = pygame.Rect(pos_variables_mission.x, pos_variables_mission.y+margin, self.window_rect_mission.width, 30)
-        self.draw_rect_field(screen, "white", rect_go_button_mission)
+        self.draw_rect_field(screen, self.color_background, rect_go_button_mission)
         if not self.buttons["launch status check"]["mission"]["rect"]:
             self.buttons["launch status check"]["mission"]["rect"] = rect_go_button_mission
-        self.draw_text("GO", screen, "black", self.font_buttons, (rect_go_button_mission.centerx-self.font_buttons.size("GO")[0]/2, rect_go_button_mission.centery-10))
+        self.draw_text("GO", screen, self.color_text, self.font_buttons, (rect_go_button_mission.centerx-self.font_buttons.size("GO")[0]/2, rect_go_button_mission.centery-10))
         
         # second view
         self.draw_table_bottom_window(screen)
@@ -188,39 +192,39 @@ class Setup:
         self.draw_launch_status_check(screen)
 
         # draw rect input field bottom
-        self.draw_rect_field(screen, "white", self.rect_input_user_field)
-        self.draw_text(self.user_new_value, screen, "black", self.font_texts, (self.rect_input_user_field.left+3, self.rect_input_user_field.top+2))
+        self.draw_rect_field(screen, self.color_background, self.rect_input_user_field)
+        self.draw_text(self.user_new_value, screen, self.color_text, self.font_texts, (self.rect_input_user_field.left+3, self.rect_input_user_field.top+2))
 
         # launch button
         size_text_launch = self.font_buttons.size("Launch")
         rect_launch_button = pygame.Rect(1500,800, size_text_launch[0]+self.margin_table[0], size_text_launch[1]+self.margin_table[1])
         self.buttons["launch"] = rect_launch_button
         self.draw_rect_field(screen, "green", rect_launch_button)
-        self.draw_text("Launch", screen, "black", self.font_buttons, (rect_launch_button.left+self.pad_table[0], rect_launch_button.top+self.pad_table[1]))
+        self.draw_text("Launch", screen, self.color_text, self.font_buttons, (rect_launch_button.left+self.pad_table[0], rect_launch_button.top+self.pad_table[1]))
 
         # FPS
         self.draw_text(round(clock.get_fps(),1), screen, "black", self.font_texts, (10, 10))
 
 
     def draw_launch_status_check(self, screen):
-        self.draw_text("Launch status check", screen, "black", self.font_titles, self.rect_lsc_monitor.topleft)
+        self.draw_text("Launch status check", screen, self.color_text, self.font_titles, self.rect_lsc_monitor.topleft)
 
         size_text_name_monitor = self.font_buttons_bold.size("environment")
         size_text_status = self.font_buttons.size("NO-GO")
         start_pos = pygame.Vector2(self.rect_lsc_monitor.left, self.rect_lsc_monitor.top+self.font_titles.size("Launch status check")[1]+35)
         for monitor in self.buttons["launch status check"].keys():
             rect_name_monitor = pygame.Rect(start_pos, (size_text_name_monitor[0]+self.margin_table[0], size_text_name_monitor[1]+self.margin_table[1]))
-            self.draw_rect_field(screen, "white", rect_name_monitor)
-            self.draw_text(monitor, screen, "black", self.font_buttons_bold, (rect_name_monitor.left+self.pad_table[0], rect_name_monitor.top+self.pad_table[1]))
+            self.draw_rect_field(screen, self.color_background, rect_name_monitor)
+            self.draw_text(monitor, screen, self.color_text, self.font_buttons_bold, (rect_name_monitor.left+self.pad_table[0], rect_name_monitor.top+self.pad_table[1]))
 
             status = self.buttons['launch status check'][monitor]['status']
             rect_status = pygame.Rect((start_pos.x+rect_name_monitor.width, start_pos.y), (size_text_status[0]+self.margin_table[0], size_text_status[1]+self.margin_table[1]))
             if status:
                 self.draw_rect_field(screen, "green", rect_status)
-                self.draw_text("GO", screen, "black", self.font_buttons, (rect_status.left+self.pad_table[0], rect_status.top+self.pad_table[1]))
+                self.draw_text("GO", screen, self.color_text, self.font_buttons, (rect_status.left+self.pad_table[0], rect_status.top+self.pad_table[1]))
             else:
                 self.draw_rect_field(screen, "#ff3d3d", rect_status)
-                self.draw_text("NO-GO", screen, "black", self.font_buttons, (rect_status.left+self.pad_table[0], rect_status.top+self.pad_table[1]))
+                self.draw_text("NO-GO", screen, self.color_text, self.font_buttons, (rect_status.left+self.pad_table[0], rect_status.top+self.pad_table[1]))
 
             start_pos.y += rect_name_monitor.height
 
@@ -238,16 +242,16 @@ class Setup:
         # draw first cell 
         size_text_first_cell = self.font_buttons_bold.size("Stage")
         rect_first_cell = pygame.Rect(self.rect_second_view.left+10, self.rect_second_view.top+10, size_text_first_cell[0]+self.margin_table[0], size_text_first_cell[1]+self.margin_table[1])
-        self.draw_rect_field(screen, "white", rect_first_cell)
-        self.draw_text("Stage", screen, "black", self.font_buttons_bold, (rect_first_cell.left+self.pad_table[0], rect_first_cell.top+self.pad_table[1]))
+        self.draw_rect_field(screen, self.color_background, rect_first_cell)
+        self.draw_text("Stage", screen, self.color_text, self.font_buttons_bold, (rect_first_cell.left+self.pad_table[0], rect_first_cell.top+self.pad_table[1]))
 
         # draw horizontal title cells
         start_pos_horizontal_title = pygame.Vector2(rect_first_cell.right+1, rect_first_cell.top)
         for name_var in table_variables:
             size_text = self.font_buttons_bold.size(name_var)
             rect_text = pygame.Rect(start_pos_horizontal_title.x, start_pos_horizontal_title.y, size_text[0]+self.margin_table[0], size_text[1]+self.margin_table[1])
-            self.draw_rect_field(screen, "white", rect_text)
-            self.draw_text(name_var, screen, "black", self.font_buttons_bold, (rect_text.left+self.pad_table[0], rect_text.top+self.pad_table[1]))
+            self.draw_rect_field(screen, self.color_background, rect_text)
+            self.draw_text(name_var, screen, self.color_text, self.font_buttons_bold, (rect_text.left+self.pad_table[0], rect_text.top+self.pad_table[1]))
 
             start_pos_horizontal_title.x += rect_text.width+1
 
@@ -256,11 +260,11 @@ class Setup:
         start_pos_internal_values = pygame.Vector2(rect_first_cell.right+1, rect_first_cell.bottom+1)
         for number_stage in range(1, self.id_count_stages+1):
             rect_num_stage = pygame.Rect(start_pos_vertical_stage_num, rect_first_cell.size)
-            if number_stage == self.current_stage_to_show: color = "white"
+            if number_stage == self.current_stage_to_show: color = self.color_background
             else: color = "#dddddd"
 
             self.draw_rect_field(screen, color, rect_num_stage)
-            self.draw_text(str(number_stage), screen, "black", self.font_buttons_bold, rect_num_stage.topleft)
+            self.draw_text(str(number_stage), screen, self.color_text, self.font_buttons_bold, rect_num_stage.topleft)
             self.buttons["edit_stage"][number_stage] = rect_num_stage
 
             for variable, dictionary in table_variables.items():
@@ -274,7 +278,7 @@ class Setup:
                 size_rect = self.font_buttons_bold.size(variable)
                 rect_value = pygame.Rect(start_pos_internal_values, (size_rect[0]+self.margin_table[0], size_rect[1]+self.margin_table[1]))
                 self.draw_rect_field(screen, color, rect_value)
-                self.draw_text(value, screen, "black", self.font_buttons, start_pos_internal_values)
+                self.draw_text(value, screen, self.color_text, self.font_buttons, start_pos_internal_values)
 
                 start_pos_internal_values.x += rect_value.width+1
         
@@ -298,14 +302,19 @@ class Setup:
 
     def draw_rect_field(self, screen, color, rect_hover):
         rect_background = pygame.Rect(rect_hover.topleft[0]-1, rect_hover.topleft[1]-1, rect_hover.width+2, rect_hover.height+2)
-        pygame.draw.rect(screen, "black", rect_background)
+        if self.color_background == "black":
+            color_background_rect = "white"
+        else:
+            color_background_rect = "black"
+
+        pygame.draw.rect(screen, color_background_rect, rect_background)
         pygame.draw.rect(screen, color, rect_hover)
 
 
     def draw_variables_inside_each_windoW(self, screen, rect_value, text_variable, text_value, pos_variables):
-        self.draw_text(text_variable, screen, "black", self.font_texts, pos_variables)
-        self.draw_rect_field(screen, "white", rect_value)
-        self.draw_text(text_value, screen, "black", self.font_buttons, (rect_value.left+3, rect_value.top+3))
+        self.draw_text(text_variable, screen, self.color_text, self.font_texts, pos_variables)
+        self.draw_rect_field(screen, self.color_background, rect_value)
+        self.draw_text(text_value, screen, self.color_text, self.font_buttons, (rect_value.left+3, rect_value.top+3))
 
 
     def draw_text(self, text, screen, color, font, pos):
