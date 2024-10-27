@@ -4,27 +4,24 @@ from helpers.environment import Environment
 from helpers.setup_simulation import Setup
 from settings import *
 
-import math
-import time
-
 class Camera:
-    def __init__(self):
+    def __init__(self) -> None:
         self.display_surface = pygame.display.get_surface()
         self.half_width = self.display_surface.get_size()[0]//2
         self.half_height = self.display_surface.get_size()[1]//2
 
         self.offset = pygame.Vector2()
 
-    def render(self, ROCKET, ENVIRONMENT):
-        self.offset.x = ROCKET.rect.centerx - self.half_width
-        self.offset.y = ROCKET.rect.centery - self.half_height
+    def render(self, ROCKET: object, ENVIRONMENT: object) -> None:
+        self.offset.x = ROCKET.position[0] - self.half_width
+        self.offset.y = ROCKET.position[1] - self.half_height
 
         ROCKET.render(self.display_surface, self.offset)
         ENVIRONMENT.render(self.display_surface, self.offset)
 
 
 class Simulation:
-    def __init__(self, screen):
+    def __init__(self, screen: pygame.Surface) -> None:
         self.screen = screen
 
         self.clock = pygame.time.Clock()
@@ -41,15 +38,16 @@ class Simulation:
         self.track = False
 
 
-    def simulation(self):
+    def simulation(self) -> None:
         """Run simulation with all the setup from before"""
         events = pygame.event.get()
         for event in events:
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_v:
-                    if self.ROCKET.current_stage < self.ROCKET.num_stages:
+                    if self.ROCKET.current_stage < len(self.SETUP.rocket_settings.keys()):
                         self.ROCKET.current_stage += 1
-                        self.ROCKET.set_variables_based_on_current_stage()
+                        self.ROCKET.set_constants(self.SETUP.rocket_settings, self.SETUP.engine_settings, self.SETUP.environment_settings, self.SETUP.mission_settings, self.ENVIRONMENT.platform)
+                        self.ROCKET.set_variables()
 
                 if event.key == pygame.K_t:
                     if self.track:
@@ -59,15 +57,15 @@ class Simulation:
 
         self.screen.fill("white")
         
-        self.trajectory_pos.append(tuple(self.ROCKET.position))
+        # self.trajectory_pos.append(tuple(self.ROCKET.position))
 
         # render
         if self.track:
             self.CAMERA.render(self.ROCKET, self.ENVIRONMENT)
         else:
             # trajectory
-            if len(self.trajectory_pos) > 1:
-                pygame.draw.aalines(self.screen, "black", False, self.trajectory_pos)
+            # if len(self.trajectory_pos) > 1:
+            #     pygame.draw.aalines(self.screen, "black", False, self.trajectory_pos)
 
             self.ENVIRONMENT.render(self.screen, None)
             self.ROCKET.render(self.screen, None)
@@ -88,7 +86,7 @@ class Simulation:
         self.screen.blit(text_stage, (10,10))
 
 
-    def setup(self):
+    def setup(self) -> None:
         """ Setup all variables changable by the user before start simulation
         """
         events = pygame.event.get()
@@ -110,8 +108,9 @@ class Simulation:
                     if all(status_list):
                         self.ENVIRONMENT.create_environment(self.SETUP.mission_settings)
 
-                        self.ROCKET.initialize_calculation_class(
-                            self.SETUP.rocket_settings, self.SETUP.engine_settings, self.SETUP.environment_settings, self.SETUP.mission_settings, self.ENVIRONMENT.platform)
+                        self.ROCKET.set_constants(self.SETUP.rocket_settings, self.SETUP.engine_settings, self.SETUP.environment_settings, self.SETUP.mission_settings, self.ENVIRONMENT.platform)
+                        self.ROCKET.set_variables()
+
                         self.current_screen = "simulation"
 
                 # create stage button
@@ -160,7 +159,7 @@ class Simulation:
         self.SETUP.run(self.screen, self.clock)
 
 
-    def run(self):
+    def run(self) -> None:
         """Run the UI to make the setup"""        
         while True:
             if self.current_screen == "setup":

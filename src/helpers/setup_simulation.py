@@ -70,7 +70,7 @@ class Setup:
             "target": {"value": "Test", "rect": ..., "type": ""},
             "launch planet": {"value": "Earth", "rect": ..., "type": ""},
             "initial flight angle": {"value": 0, "rect": ..., "type": "°"},
-            "launch altitude": {"value": 0, "rect": ..., "type": "m"}
+            "launch altitude": {"value": 50, "rect": ..., "type": "m"}
         }
         
         self.rect_second_view = pygame.Rect(150, 700, 900, 250)

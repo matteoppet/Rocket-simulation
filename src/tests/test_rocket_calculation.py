@@ -4,9 +4,11 @@ from unittest.mock import patch
 import os 
 import pygame
 import math
+import numpy as np
 os.environ["SDL_VIDEODRIVER"] = "dummy"
 
 from ..helpers.rocket import RocketCalculation
+
 
 class TestRocket(unittest.TestCase):
     @classmethod
@@ -18,107 +20,67 @@ class TestRocket(unittest.TestCase):
         pygame.quit()
 
     def setUp(self) -> None:
-        rocket_settings = {
-            1: {
-                "dry mass": {"value": 5000, "rect": ..., "type": "kg"},
-                "propellant mass": {"value": 5000, "rect": ..., "type": "kg"},
-                "cd": {"value": 0.5, "rect": ..., "type": ""}
-            }
-        }
-        environment_settings = {
-            "gravity": {"value": 9.81, "rect": ..., "type": 'm/s'},
-            "air density": {"value": 1.221, "rect": ..., "type": 'p'},
-            "wind velocity": {"value": 0, "rect": ..., "type": 'm/s'}
-        }
-        engine_settings = {
-            1: {
-                "engine identifier": {"value": "Default", "rect": ..., "type": ""},
-                "thrust power": {"value": 30000, "rect": ..., "type": "N"},
-                "ISP": {"value": 300, "rect": ..., "type": "s"},
-                "thrust vector angle": {"value": 15, "rect": ..., "type": "°"},
-                "number engines": {"value": 1, "rect": ..., "type": ""}
-            }
-        }
-        mission_settings = {
-            "apogee": {"value": 0, "rect": ..., "type": "m"},
-            "target": {"value": "Test", "rect": ..., "type": ""},
-            "launch planet": {"value": "Earth", "rect": ..., "type": ""},
-            "initial flight angle": {"value": 0, "rect": ..., "type": "°"},
-            "launch altitude": {"value": 0, "rect": ..., "type": "m"}
-        }
-
-        self.size_object = (10, 80)
-        self.rocket = RocketCalculation(
-            rocket_settings, engine_settings, environment_settings, mission_settings, (0, 0), self.size_object
-        )
-
-
-    def test_center_of_mass(self) -> None:
-        center_of_mass = self.rocket.get_center_of_mass
-        self.assertEqual(center_of_mass, pygame.Vector2(5, 40))
-
-    def test_relative_velocity(self) -> None:
-        self.rocket.velocity = pygame.Vector2(100, 0)
-        wind_speed = 60
-        wind_angle = 45
-        self.rocket.wind_velocity = pygame.Vector2(
-            wind_speed * math.sin(math.radians(wind_angle)),
-            wind_speed * math.cos(math.radians(wind_angle))
-        )
-        relative_velocity = self.rocket.get_relative_velocity
-        self.assertAlmostEqual(relative_velocity.x, 57.57, places=2)
-        self.assertAlmostEqual(relative_velocity.y, -42.42, places=1)
-
-    def test_lever_arm(self):
-        self.rocket.size = pygame.Vector2(20, 100)
-        position_force_applied = pygame.Vector2(self.rocket.size.x/2, self.rocket.size.y)        
-        distance = self.rocket.calculate_lever_arm(position_force_applied)
-        self.assertEqual(distance, pygame.Vector2(0, 50))
-
-    def test_torque_generated_from_thrust(self) -> None:
-        self.rocket.size = pygame.Vector2(20, 100)
-        self.rocket.current_thrust_power = 30000
-        self.rocket.gimbal_angle = 0
-        self.torque_0_angle = self.rocket.get_torque_from_thrust
-        self.rocket.gimbal_angle = 5
-        self.torque_5_angle = self.rocket.get_torque_from_thrust
-
-        self.assertEqual(self.torque_0_angle, 0)
-        self.assertAlmostEqual(self.torque_5_angle, 130733.6, places=1)
-
-    def test_lever_arm_horizontal_wind(self) -> None:
-        self.rocket.size = pygame.Vector2(20, 100)
-        self.rocket.wind_angle = 45
-        self.rocket.rocket_angle = 0
-        self.assertAlmostEqual(self.rocket.get_lever_arm_horizontal_wind, 35.36, places=1)
-
-    def test_lever_arm_vertical_wind(self):
-        self.rocket.size = pygame.Vector2(20, 100)
-        self.rocket.wind_angle = 45
-        self.rocket.rocket_angle = 0
-        self.assertAlmostEqual(self.rocket.get_lever_arm_vertical_wind, 7.07, places=1)
-
-    def test_torque_generated_by_wind(self) -> None:
-        self.rocket.size = pygame.Vector2(20, 100)
-        self.rocket.rocket_angle = 0
-        self.rocket.wind_angle = 45
-        self.rocket.velocity = (0, 50)
+        self.rocket = RocketCalculation()
+        self.rocket.set_constants({}, {}, {}, {}, pygame.Rect(0,0,0,0))
+        self.rocket.set_variables()
+    
+    def test_drag_from_wind(self):
+        self.rocket.air_density = 1.225
         self.rocket.drag_coeff = 0.5
+        self.rocket.size = pygame.Vector2(20, 100)
+        self.rocket.rocket_angle = 0
+        self.rocket.wind_velocity = np.array([
+            10 * np.cos(np.radians(45)),
+            10 * np.sin(np.radians(45))
+        ])
+        self.rocket.velocity = np.array([0, 300])
 
-        self.rocket.wind_velocity = pygame.Vector2(
-            0 * math.sin(math.radians(self.rocket.wind_angle)),
-            0 * math.cos(math.radians(self.rocket.wind_angle))
-        )
-        self.assertEqual(self.rocket.get_torque_from_wind, 0)
+        expected_drag = (1/2) * self.rocket.air_density * np.power(np.linalg.norm(self.rocket.velocity - self.rocket.wind_velocity), 2) * self.rocket.drag_coeff * (np.pi*((self.rocket.size.x/2)**2))
 
-        self.rocket.wind_velocity = pygame.Vector2(
-            10 * math.sin(math.radians(self.rocket.wind_angle)),
-            10 * math.cos(math.radians(self.rocket.wind_angle))
-        )
-        # torque 1 = 433,037.5
-        # torque 2 = 2,165,514.51
-        self.assertAlmostEqual(self.rocket.get_torque_from_wind, 2,598,552.01, places=1)
+        self.assertAlmostEqual(self.rocket.get_drag_from_wind, expected_drag, places=6, msg=f"Drag generated by wind")
 
+    def test_torque_generated_by_wind(self):
+        def test():
+            lever_arm = np.linalg.norm(self.rocket.center_of_mass - self.rocket.center_of_pressure)
+            relative_velocity = np.linalg.norm(self.rocket.velocity - self.rocket.wind_velocity)
+            cross_sectional_area = np.pi*np.power(self.rocket.size.x/2,2)
+            drag = 0.5 * self.rocket.air_density * np.power(relative_velocity, 2) * 0.5 * cross_sectional_area
+            return drag * lever_arm
+
+        self.rocket.air_density = 1.225
+        self.rocket.drag_coeff = 0.5
+        self.rocket.size = pygame.Vector2(20, 100)
+        self.rocket.rocket_angle = 0
+        self.rocket.wind_velocity = np.array([
+            10 * np.sin(np.radians(45)),
+            10 * np.cos(np.radians(45))
+        ])
+        self.rocket.velocity = np.array([0, 300])
+
+        self.rocket.center_of_mass = np.array([self.rocket.size.x/2, self.rocket.size.y/2])
+        self.rocket.center_of_pressure = np.array([self.rocket.center_of_mass[0], self.rocket.center_of_mass[1]+20])
+
+        # formula right
+        expected_torque = test()
+        self.assertAlmostEqual(self.rocket.get_torque_generated_by_wind, expected_torque, places=1, msg="Torque generated by wind")
+
+    def test_torque_generated_by_thrust(self):
+        self.rocket.size = pygame.Vector2(20, 100)
+        self.rocket.center_of_mass = pygame.Vector2(self.rocket.size.x/2, self.rocket.size.y/2)
+        self.rocket.force_thrust = 10000
+        self.rocket.thrust_angle = 5
+        self.rocket.thrust_position =  pygame.Vector2(self.rocket.center_of_mass.x, self.rocket.size.y)
+
+        self.assertAlmostEqual(self.rocket.get_torque_generated_by_thrust, 43577.871373829086779032135418737, places=6)
+    
+    def test_inertia(self):
+        self.rocket.size = pygame.Vector2(20, 100)
+        self.rocket.dry_mass = 1000
+        self.rocket.fuel_mass = 0
+
+        expected_inertia = (1/12) * (self.rocket.dry_mass + self.rocket.current_fuel) * (3*np.power(self.rocket.size.x/2, 2) + np.power(self.rocket.size.y, 2))
+
+        self.assertAlmostEqual(self.rocket.get_inertia, expected_inertia, places=6, msg="Inertia of the rocket")
 
 
 if __name__ == "__main__":
@@ -128,5 +90,7 @@ if __name__ == "__main__":
 # center of mass
 # center of pressure
 # tests
-# parameters functions
 # stand rocket
+
+# after all the tests, test the game AND CODE A LOT, A LOT. 
+# change also center of pressure of the rocket based on the wind
