@@ -58,6 +58,8 @@ class RocketCalculation:
         self.position = np.array([self.launch_platform.centerx-self.size.x/2,self.launch_platform.centery-self.size.y])
         self.apogee = 0
 
+        self.test = 0
+
 
     def update_state(self, dt) -> None:
         """ How each state works
@@ -68,18 +70,11 @@ class RocketCalculation:
         upwards forces = thrust
         opposing forces = gravity, mass rocket, drag
 
-        wind = 
-
-        TODO 2: simulate wind
-        TODO 3: maybe adjust the mass flow rate
+        velocity wind -> center of pressure -> torque -> angular acceleration -> angular velocity
         """
-        # mass flow 
-        # mass_flow = self.force_thrust/(self.isp_engine*self.gravity)
-        # fuel_burnt = mass_flow * int(self.time_thrust_burning)
-        # if self.fuel_mass > 0: self.fuel_mass -= fuel_burnt
-        # else:  
-        #     self.fuel_mass = 0
-        #     self.force_thrust_percentage = 0
+        m_fuel = self.get_force_thrust / (self.isp_engine * self.gravity)
+        fuel_burnt = m_fuel * self.test
+        self.fuel_mass -= fuel_burnt
 
         # update acceleration and velocity
         net_force = self.get_thrust_vector - self.get_weight - self.get_drag
@@ -90,14 +85,11 @@ class RocketCalculation:
         self.angular_acceration = self.get_net_torque / self.get_inertia
         self.angular_velocity += self.angular_acceration * dt
 
-        print(self.get_altitude)
-
 
     @property
     def get_relative_wind_aoa(self):
         relative_aoa = (self.rocket_angle - self.wind_angle) % 360
-        if relative_aoa > 180:
-            relative_aoa -= 360
+        if relative_aoa > 180: relative_aoa -= 360
         return relative_aoa
     @property
     def get_current_position_cop(self):
@@ -207,14 +199,12 @@ class Rocket(RocketCalculation, pygame.sprite.Sprite):
 
     def run(self, dt: int) -> None:
         self.force_thrust = self.get_force_thrust
-
         self.rocket_angle = self.rocket_angle % 360
 
         if self.rocket_angle < 0: self.rocket_angle = 360
         elif self.rocket_angle > 360: self.rocket_angle = 0
 
-        if self.force_thrust <= 0: self.start_time = None
-        if self.start_time is not None: self.time_thrust_burning = time.time() - self.start_time
+        if self.get_force_thrust > 0: self.time_thrust_burning += dt
         else: self.time_thrust_burning = 0
 
         self.update_state(dt)
@@ -248,29 +238,18 @@ class Rocket(RocketCalculation, pygame.sprite.Sprite):
 
         # control power engine
         if keys[pygame.K_w]:
-            if self.force_thrust_percentage < 100 and self.fuel_mass > 0:
-                self.force_thrust_percentage += 1
-                self.start_time = time.time()
+            if self.force_thrust_percentage < 100 and self.fuel_mass > 0: self.force_thrust_percentage += 1
         elif keys[pygame.K_s]:
             if self.force_thrust_percentage > 0: self.force_thrust_percentage -= 1
-            else: self.start_time = None
         elif keys[pygame.K_x]:
-            if self.fuel_mass > 0:
-                self.force_thrust_percentage = 100
-                self.start_time = time.time()
-        elif keys[pygame.K_z]:
-            self.force_thrust_percentage = 0
-            self.start_time = None
+            if self.fuel_mass > 0: self.force_thrust_percentage = 100
+        elif keys[pygame.K_z]: self.force_thrust_percentage = 0
 
-        if keys[pygame.K_l]:
-            self.wind_angle += 1
-        elif keys[pygame.K_k]:
-            self.wind_angle -= 1
+        if keys[pygame.K_l]: self.wind_angle += 1
+        elif keys[pygame.K_k]: self.wind_angle -= 1
 
-        if keys[pygame.K_p]:
-            self.center_of_mass[1] += 1
-        elif keys[pygame.K_o]:
-            self.center_of_mass[1] -= 1
+        if keys[pygame.K_p]: self.center_of_mass[1] += 1
+        elif keys[pygame.K_o]: self.center_of_mass[1] -= 1
 
         # move gimbal thrust
         if keys[pygame.K_d]:

@@ -47,8 +47,8 @@ class Setup:
         self.window_rect_rocket = pygame.Rect(550, 300, 300, 300)
         self.rocket_settings = {
             1: {
-                "dry mass": {"value": 1000, "rect": ..., "type": "kg"},
-                "propellant mass": {"value": 500, "rect": ..., "type": "kg"},
+                "dry mass": {"value": 22200, "rect": ..., "type": "kg"},
+                "propellant mass": {"value": 395700, "rect": ..., "type": "kg"},
                 "cd": {"value": 0.5, "rect": ..., "type": ""}
             }
         }
@@ -57,8 +57,8 @@ class Setup:
         self.engine_settings = {
             1: {
                 "engine identifier": {"value": "Default", "rect": ..., "type": ""},
-                "thrust power": {"value": 30000, "rect": ..., "type": "N"},
-                "ISP": {"value": 300, "rect": ..., "type": "s"},
+                "thrust power": {"value": 7607000, "rect": ..., "type": "N"},
+                "ISP": {"value": 282, "rect": ..., "type": "s"},
                 "thrust vector angle": {"value": 15, "rect": ..., "type": "°"},
                 "number engines": {"value": 1, "rect": ..., "type": ""}
             }
