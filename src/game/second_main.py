@@ -1,8 +1,8 @@
 import pygame
-from helpers.rocket import Rocket
-from helpers.environment import Environment
-from helpers.setup_simulation import Setup
-from settings import *
+from game.helpers.rocket import Rocket
+from game.helpers.environment import Environment
+from game.helpers.setup_simulation import Setup
+from pygame.locals import *
 
 class Camera:
     def __init__(self) -> None:
@@ -21,10 +21,16 @@ class Camera:
 
 
 class Simulation:
-    def __init__(self, screen: pygame.Surface) -> None:
-        self.screen = screen
+    def __init__(self) -> None:
+        WINDOW_WIDTH = 1800
+        WINDOW_HEIGHT = 1000
 
+        pygame.init()
+        flags = DOUBLEBUF
+        self.screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT), flags)
         self.clock = pygame.time.Clock()
+        pygame.font.init()
+        pygame.event.set_allowed([QUIT, KEYDOWN, KEYUP, MOUSEBUTTONDOWN, MOUSEBUTTONUP])
 
         self.ENVIRONMENT = Environment((WINDOW_WIDTH, WINDOW_HEIGHT))
         self.ROCKET = Rocket()
@@ -37,11 +43,15 @@ class Simulation:
 
         self.track = False
 
+        self.run()
+
 
     def simulation(self) -> None:
         """Run simulation with all the setup from before"""
         events = pygame.event.get()
         for event in events:
+            if event.type == pygame.QUIT:
+                pygame.quit()
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_v:
                     if self.ROCKET.current_stage < len(self.SETUP.rocket_settings.keys()):
@@ -57,7 +67,7 @@ class Simulation:
 
         self.screen.fill("white")
         
-        # self.trajectory_pos.append(tuple(self.ROCKET.position))
+        # self.trajectory_pos.append(tuple(self.ROCKET.positi)on)
 
         # render
         if self.track:
@@ -162,10 +172,8 @@ class Simulation:
     def run(self) -> None:
         """Run the UI to make the setup"""        
         while True:
-            if self.current_screen == "setup":
-                self.setup()
-            elif self.current_screen == "simulation":
-                self.simulation()
+            if self.current_screen == "setup": self.setup()
+            elif self.current_screen == "simulation": self.simulation()
 
             pygame.display.flip()
             self.clock.tick(60)

@@ -22,23 +22,23 @@ class RocketCalculation:
         self.center_of_pressure_max = self.size.y/2
         self.center_of_pressure_min = -self.size.y/2
 
-        self.wind_speed = self.environment_settings["wind velocity"]["value"]
+        self.wind_speed = self.environment_settings["wind velocity"]
         self.wind_angle = 45
         self.wind_velocity = np.array([
             self.wind_speed * np.sin(np.radians(self.wind_angle)),
             self.wind_speed * np.cos(np.radians(self.wind_angle)),
         ])
 
-        self.air_density = self.environment_settings["air density"]["value"]
-        self.drag_coeff = self.rocket_settings[self.current_stage]["cd"]["value"]
-        self.gravity = self.environment_settings["gravity"]["value"]
+        self.air_density = self.environment_settings["air density"]
+        self.drag_coeff = self.rocket_settings[self.current_stage]["cd"]
+        self.gravity = self.environment_settings["gravity"]
 
-        self.dry_mass = self.rocket_settings[self.current_stage]["dry mass"]["value"]
-        self.fuel_mass = self.rocket_settings[self.current_stage]["propellant mass"]["value"]
+        self.dry_mass = self.rocket_settings[self.current_stage]["dry mass"]
+        self.fuel_mass = self.rocket_settings[self.current_stage]["propellant mass"]
 
-        self.max_force_thrust = self.engine_settings[self.current_stage]["thrust power"]["value"]
-        self.max_thrust_angle = self.engine_settings[self.current_stage]["thrust vector angle"]["value"]
-        self.isp_engine = self.engine_settings[self.current_stage]["ISP"]["value"]
+        self.max_force_thrust = self.engine_settings[self.current_stage]["thrust power"]
+        self.max_thrust_angle = self.engine_settings[self.current_stage]["thrust vector angle"]
+        self.isp_engine = self.engine_settings[self.current_stage]["isp"]
 
     def set_variables(self) -> None:
         self.rocket_angle = 0
@@ -173,15 +173,14 @@ class Rocket(RocketCalculation, pygame.sprite.Sprite):
         self.direction = pygame.Vector2()
 
     def render(self, screen: pygame.Surface, offset: bool=None) -> None:
-        if offset is not None:
-            rocket_pos = self.rect.topleft - offset
-        else:
-            rocket_pos = self.rect.topleft
-
         scaled_image = pygame.transform.smoothscale(self.copy_image, (22, 160))
-        self.rect = scaled_image.get_rect()
         rotated_image = pygame.transform.rotate(scaled_image, self.rocket_angle)
-        screen.blit(rotated_image, rocket_pos)
+        self.rect = rotated_image.get_rect(center=self.position)
+
+        if offset is not None: position = self.rect.topleft - offset
+        else: position = self.rect
+
+        screen.blit(rotated_image, position)
 
         center_circle_cop = self.position + self.get_current_position_cop
         pygame.draw.circle(screen, "red", center_circle_cop, 5)

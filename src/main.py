@@ -1,16 +1,10 @@
 if __name__ == "__main__":
-    import pygame
-    from simulation import Simulation
-    from settings import *
-    from pygame.locals import *
-    flags = DOUBLEBUF
+    from setup.main import Setup_Window
+    from tkinter import Tk
 
-    pygame.init()
-    screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT), flags)
-    clock = pygame.time.Clock()
-    running = True
-    pygame.font.init()
-    pygame.event.set_allowed([QUIT, KEYDOWN, KEYUP, MOUSEBUTTONDOWN, MOUSEBUTTONUP])
+    root = Tk(screenName="Setup Window")
+    root.geometry("600x700")
+    root.title("Setup window")
+    window = Setup_Window(root)
 
-    SIMULATION = Simulation(screen)
-    SIMULATION.run()
+    root.mainloop()

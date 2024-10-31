@@ -16,8 +16,8 @@ class Environment:
         self.ground_sprites = pygame.sprite.Group()
 
     def create_environment(self, setup_dict: dict) -> None:
-        launch_altitude = setup_dict["launch altitude"]["value"]
-        initial_angle = setup_dict["initial flight angle"]["value"]
+        launch_altitude = setup_dict["launch altitude"]
+        initial_angle = setup_dict["initial flight angle"]
 
         self.platform = pygame.Rect(800, self.window_size[1]-20-launch_altitude, 100, 10)
         altitude_poles = self.base_terrain.y-self.platform.bottomleft[1]
