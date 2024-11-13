@@ -1,0 +1,50 @@
+{
+    "name": "test rocket",
+    "parts": {
+        "1": {
+            "size": [
+                5,
+                85
+            ],
+            "parts": {
+                "nose": {
+                    "shape": "cone",
+                    "height": 15.0,
+                    "width": 5.0,
+                    "mass": 162.351,
+                    "position_from_base": 0.0
+                },
+                "body": {
+                    "shape": "cylinder",
+                    "height": 70.0,
+                    "width": 5.0,
+                    "mass": 1000.0,
+                    "position_from_base": 0.0
+                },
+                "fins": {
+                    "shape": "triangle",
+                    "count": 4,
+                    "height": 3.0,
+                    "width": 9.0,
+                    "mass": 73.44,
+                    "position_from_base": 0.0
+                },
+                "engine": {
+                    "name": "test",
+                    "shape": "cone",
+                    "width": 0,
+                    "height": 200.0,
+                    "thrust": 0.0,
+                    "isp": 0.0,
+                    "mass": 0.0,
+                    "position_from_base": 0.0,
+                    "ignition_delay": 0.0,
+                    "num_motors": 0,
+                    "max_angle": 0.0
+                }
+            },
+            "dry_mass": 1235.791,
+            "initial_fuel_mass": 0.0
+        }
+    }
+}

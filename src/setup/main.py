@@ -1,110 +1,88 @@
 from tkinter import *
-import tkinter as ttk
+from tkinter import ttk
+from tkinter import filedialog
+import csv
+import json
 
 from game.main import Simulation
-
 
 class Setup_Window(ttk.Frame):
     def __init__(self, master):
         super().__init__(master)
-        self.font = "TkDefaultFont"
         self.master = master
 
-        self.environment_settings = {
-            "gravity": 9.81,
+        self.font = "TkDefaultFont"
+        self.current_stage = 1
+
+        self.path_json_config = "../assets/rocket_files/rocket_config_2.json"
+        with open(self.path_json_config, "r") as file:
+            self.rocket_config = json.load(file)
+        file.close()
+
+        self.launch_pad_settings = {  ##### TEMPORARY
+            "elevation": 0,
+            "temperature": 15,
             "air density": 1.221,
-            "wind velocity": 0,
+            "wind speed": 0,
+            "wind angle": 0,
+            "launch angle": 0,
+            "gravity": 9.81,
         }
-        self.rocket_settings = {
-            1: {
-                "dry mass": 22200,
-                "propellant mass": 395700,
-                "cd": 0.5,
-            }
-        }
-        self.motor_settings = {
-            1: {
-                "engine identifier": "Default",
-                "thrust power": 7607000,
-                "isp": 282,
-                "thrust vector angle": 15,
-                "number engines": 1
-            }
-        }
-        self.mission_settings = {
-            "apogee": 0,
-            "target": "moon",
-            "launch planet": "earth",
-            "initial flight angle": 0,
-            "launch altitude": 0,
-        }
-
-        self.run()
-
     
     def run(self):
-        frame = ttk.Frame(self.master)
-        frame.grid()
+        self.create_notebook()
 
-        self.init_row = 0
-        self.init_col = 0
+        self.load_frame_setup(self.setup_frame)
+        self.load_frame_flight_simulation(self.flight_frame)
 
-        # environment 
-        ttk.Label(master=frame, text="Environment Settings", font=(self.font, 16)).grid(row=self.init_row, column=self.init_col, sticky="w", pady=15, padx=10)
-        self.init_row += 1
-        self.draw_variables(self.environment_settings, frame)
-        
-        # rocket
-        ttk.Label(master=frame, text="Rocket Settings", font=(self.font, 16)).grid(row=self.init_row, column=self.init_col, sticky="w", pady=15, padx=10)
-        self.init_row += 1
-        self.draw_second_variables(self.rocket_settings, frame)
+        self.master.mainloop()
 
-        # motor
-        ttk.Label(master=frame, text="Motor Settings", font=(self.font, 16)).grid(row=self.init_row, column=self.init_col, sticky="w", pady=15, padx=10)
-        self.init_row += 1
-        self.draw_second_variables(self.motor_settings, frame)
+    def create_notebook(self):
+        notebook = ttk.Notebook(self.master)
+        notebook.grid()
 
-        # mission
-        ttk.Label(master=frame, text="Mission Settings", font=(self.font, 16)).grid(row=self.init_row, column=self.init_col, sticky="w", pady=15, padx=10)
-        self.init_row += 1
-        self.draw_variables(self.mission_settings, frame)
+        self.setup_frame = ttk.Frame(notebook)
+        self.setup_frame.grid()
 
-        # launch button
-        launch_button = ttk.Button(master=frame, text="launch", background="#76B355", command=lambda: self.run_simulation())
-        launch_button.grid(row=0, column=2, sticky="n")
-    
+        self.flight_frame = ttk.Frame(notebook)
+        self.flight_frame.grid()
 
-    def run_simulation(self):
-        Simulation(self.rocket_settings, self.motor_settings, self.environment_settings, self.mission_settings)
+        notebook.add(self.setup_frame, text="Setup")
+        notebook.add(self.flight_frame, text="Flight Simulation")
 
+    def load_frame_setup(self, frame):
+        init_row = 0
+        init_col = 0
 
-    def modify_values(self, entry, dictionary_variables):
-        name_variable = entry._name
-        new_value = entry.get()
-        dictionary_variables[name_variable] = new_value
+        ttk.Label(master=frame, text="Rocket Settings", font=(self.font, 16)).grid(row=init_row, column=init_col, sticky="w", pady=15, padx=10)
+        init_row += 1
+        for component, attrib in self.rocket_config["parts"][str(self.current_stage)]["parts"].items():
+            ttk.Label(master=frame, text=f"{component}:", font=(self.font, 11)).grid(row=init_row, column=init_col, sticky="w", pady=2, padx=10)
+            init_row += 1
 
+            for each_attrib, value in attrib.items():
+                ttk.Label(master=frame, text=f"{each_attrib}:", font=(self.font, 11)).grid(row=init_row, column=init_col+1, sticky="w", pady=2, padx=10)
 
-
-    def draw_variables(self, dictionary_variables, frame):
-        for key, value in dictionary_variables.items():
-            ttk.Label(master=frame, text=key, font=(self.font, 11)).grid(column=self.init_col, row=self.init_row, sticky="w", pady=2, padx=10)
-
-            entry = ttk.Entry(master=frame, width=20, name=key)
-            entry.grid(column=self.init_col+1, row=self.init_row, pady=2)
-            entry.insert(0, value)
-            entry.bind("<Return>", lambda event, e=entry: self.modify_values(e, dictionary_variables))
-
-            self.init_row += 1
-
-
-    def draw_second_variables(self, dictionary_variables, frame):
-        for stage in dictionary_variables.keys():
-            for key, value in dictionary_variables[stage].items():
-                ttk.Label(master=frame, text=key, font=(self.font, 11)).grid(column=self.init_col, row=self.init_row, sticky="w", pady=2, padx=10)
-
-                entry = ttk.Entry(master=frame, width=20, name=key)
-                entry.grid(column=self.init_col+1, row=self.init_row, pady=2)
+                entry = ttk.Entry(master=frame, width=20, name=f"{component},{each_attrib}")
+                entry.grid(row=init_row, column=init_col+2, pady=2)
                 entry.insert(0, value)
-                entry.bind("<Return>", lambda event, e=entry: self.modify_values(e, dictionary_variables))
+                entry.bind("<Return>", lambda event, e=entry: self.modify_values(e))
 
-                self.init_row += 1
+                init_row += 1
+
+    def load_frame_flight_simulation(self, frame):
+        def run_simulation():
+            sim = Simulation()
+            sim.restart(self.launch_pad_settings)
+
+        launch_button = Button(master=frame, text="launch", background="#76B355", command=lambda: run_simulation())
+        launch_button.grid(row=0, column=0)
+
+    def modify_values(self, e):
+        name_component, name_attrib = e._name.split(",")
+        new_value = float(e.get())
+        
+        self.rocket_config["parts"][str(self.current_stage)]["parts"][name_component][name_attrib] = new_value
+
+        with open(self.path_json_config, "w") as file:
+            json.dump(self.rocket_config, file, indent=4)

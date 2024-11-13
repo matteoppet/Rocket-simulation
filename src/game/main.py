@@ -22,43 +22,52 @@ class Camera:
 
 
 class Simulation:
-    def __init__(self, rocket_settings, engine_settings, environment_settings, mission_settings):
-        self.rocket_settings = rocket_settings
-        self.engine_settings = engine_settings
-        self.environment_settings = environment_settings
-        self.mission_settings = mission_settings
+    def __init__(self):
         self.track = False
         self.WINDOW_SIZE = (1800, 1000)
 
-        pygame.init()
-        flags = DOUBLEBUF
-        self.screen = pygame.display.set_mode(self.WINDOW_SIZE, flags)
-        self.clock = pygame.time.Clock()
-        pygame.font.init()
-        pygame.event.set_allowed([QUIT, KEYDOWN, KEYUP, MOUSEBUTTONDOWN, MOUSEBUTTONUP])
+        self.FLAGS = DOUBLEBUF
+        self.screen = None
 
-        self.ROCKET = Rocket()
-        self.CAMERA = Camera()
-        self.ENVIRONMENT = Environment(self.WINDOW_SIZE)
-        self.ENVIRONMENT.create_environment(self.mission_settings)
 
-        self.ROCKET.set_constants(
-            self.rocket_settings,
-            self.engine_settings,
-            self.environment_settings,
-            self.mission_settings,
-            self.ENVIRONMENT.platform
-        )
-        self.ROCKET.set_variables()
+    def restart(self, launch_pad_settings):
+        self.launch_pad_settings = launch_pad_settings
+        self.mission_settings = {
+            "apogee": 0,
+            "target": "moon",
+            "launch planet": "earth",
+            "initial flight angle": 0,
+            "launch altitude": 0,
+        }
+
         self.run()
-    
 
+    
     def run(self):
-        while True:
+        pygame.init()
+        
+        if not self.screen:
+            self.screen = pygame.display.set_mode(self.WINDOW_SIZE, self.FLAGS)
+            self.clock = pygame.time.Clock()
+            pygame.font.init()
+            pygame.event.set_allowed([QUIT, KEYDOWN, KEYUP, MOUSEBUTTONDOWN, MOUSEBUTTONUP])
+
+            self.ENVIRONMENT = Environment(self.WINDOW_SIZE)
+            self.ENVIRONMENT.create_environment(self.mission_settings)
+            self.ROCKET = Rocket()
+            self.CAMERA = Camera()
+
+            self.ROCKET.restart(
+                self.launch_pad_settings,
+                pygame.Vector2(self.ENVIRONMENT.platform.centerx, self.ENVIRONMENT.platform.topleft[1])
+            )
+        
+        running = True
+        while running:
             events = pygame.event.get()
             for event in events:
                 if event.type == pygame.QUIT:
-                    pygame.quit()
+                    running = False
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_t:
                         if self.track: self.track = False
@@ -71,10 +80,16 @@ class Simulation:
                 self.ENVIRONMENT.render(self.screen, None)
                 self.ROCKET.render(self.screen, None)
 
-            dt = self.clock.tick(60)/1000.0
+            timestep = self.clock.tick(60)/1000.0
             self.ROCKET.controls()
-            self.ROCKET.run(dt)
+            self.ROCKET.launch(timestep)
             self.ROCKET.collision(self.ENVIRONMENT.ground_sprites)
+
+            pygame.display.set_caption(str(round(self.clock.get_fps(), 2)))
 
             pygame.display.flip()
             self.clock.tick(60)
+
+        pygame.display.quit()
+        self.screen = None
+    
