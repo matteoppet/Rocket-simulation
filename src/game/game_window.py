@@ -14,8 +14,8 @@ class Camera:
         self.offset = pygame.Vector2()
 
     def render(self, ROCKET: object, ENVIRONMENT: object) -> None:
-        self.offset.x = ROCKET.position[0] - self.half_width
-        self.offset.y = ROCKET.position[1] - self.half_height
+        self.offset.x = ROCKET.body.position[0] - self.half_width
+        self.offset.y = ROCKET.body.position[1] - self.half_height
 
         ROCKET.render(self.display_surface, self.offset)
         ENVIRONMENT.render(self.display_surface, self.offset)
@@ -32,14 +32,6 @@ class Simulation:
 
     def restart(self, launch_pad_settings):
         self.launch_pad_settings = launch_pad_settings
-        self.mission_settings = {
-            "apogee": 0,
-            "target": "moon",
-            "launch planet": "earth",
-            "initial flight angle": 0,
-            "launch altitude": 0,
-        }
-
         self.run()
 
     
@@ -53,13 +45,14 @@ class Simulation:
             pygame.event.set_allowed([QUIT, KEYDOWN, KEYUP, MOUSEBUTTONDOWN, MOUSEBUTTONUP])
 
             self.ENVIRONMENT = Environment(self.WINDOW_SIZE)
-            self.ENVIRONMENT.create_environment(self.mission_settings)
+            self.ENVIRONMENT.create_environment(self.launch_pad_settings)
             self.ROCKET = Rocket()
             self.CAMERA = Camera()
 
             self.ROCKET.restart(
                 self.launch_pad_settings,
-                pygame.Vector2(self.ENVIRONMENT.platform.centerx, self.ENVIRONMENT.platform.topleft[1])
+                pygame.Vector2(self.ENVIRONMENT.launch_pad.centerx, self.ENVIRONMENT.launch_pad.topleft[1]),
+                self.ENVIRONMENT
             )
         
         running = True
@@ -75,7 +68,7 @@ class Simulation:
 
             self.screen.fill("white")
             
-            if self.track: self.CAMERA.render()
+            if self.track: self.CAMERA.render(self.ROCKET, self.ENVIRONMENT)
             else:
                 self.ENVIRONMENT.render(self.screen, None)
                 self.ROCKET.render(self.screen, None)

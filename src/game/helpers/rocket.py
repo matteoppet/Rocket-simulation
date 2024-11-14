@@ -15,9 +15,7 @@ class Rocket(pygame.sprite.Sprite):
             self.angular_velocity = 0
             self.drag_coeff = 0.5
 
-            self.angle = self.rocket_instance.environment_settings["launch angle"]
-            self.wind_speed = self.rocket_instance.environment_settings["wind speed"]
-            self.wind_angle = self.rocket_instance.environment_settings["wind angle"]
+            self.angle = 0
 
             self.reset_stage(rocket_config)
 
@@ -27,6 +25,7 @@ class Rocket(pygame.sprite.Sprite):
             self.direction = pygame.Vector2()
             self.center_of_pressure = np.array([self.size.x/2,0.0])
             self.center_of_gravity = np.array([self.size.x/2,0.0])
+
 
         def reset_stage(self, rocket_config):
             self.rocket_config = rocket_config
@@ -59,7 +58,7 @@ class Rocket(pygame.sprite.Sprite):
 
         @property
         def get_lift(self):
-            air_density = self.rocket_instance.environment_settings["air density"]
+            air_density = self.rocket_instance.environment.get_air_density
             relative_velocity = self.get_relative_velocity
             cross_sectional_area_fins = self.rocket_config[str(self.rocket_instance.current_stage)]["parts"]["fins"]["count"] * ((1/2) * self.rocket_config[str(self.rocket_instance.current_stage)]["parts"]["fins"]["width"] * self.rocket_config[str(self.rocket_instance.current_stage)]["parts"]["fins"]["height"])
             angle_of_attack = self.get_AOA_rocket
@@ -175,22 +174,25 @@ class Rocket(pygame.sprite.Sprite):
         @property
         def get_drag(self):
             speed = np.linalg.norm(self.get_relative_velocity)  
-            drag_magnitude = 0.5 * self.drag_coeff * self.get_cross_sectional_area * self.rocket_instance.environment_settings["air density"] * (speed**2)
+            air_density = self.rocket_instance.environment.get_air_density
+            drag_magnitude = 0.5 * self.drag_coeff * self.get_cross_sectional_area * air_density * (speed**2)
             drag_direction = self.velocity / speed if speed > 0 else np.array([0.0, 0.0])
             drag = drag_direction * drag_magnitude
             return drag
         @property
         def get_wind_velocity_vector(self):
+            wind_speed = self.rocket_instance.environment.get_wind_speed
+            wind_angle = self.rocket_instance.environment.get_wind_angle
             return np.array([
-                self.wind_speed * np.sin(np.radians(self.wind_angle)),
-                self.wind_speed * np.cos(np.radians(self.wind_angle))
+                wind_speed * np.sin(np.radians(wind_angle)),
+                wind_speed * np.cos(np.radians(wind_angle))
             ])
         @property
         def get_total_mass(self):
             return self.dry_mass + self.fuel_mass     
         @property
         def get_weight(self):
-            return np.array([0, self.get_total_mass * self.rocket_instance.environment_settings["gravity"]])      
+            return np.array([0, self.get_total_mass * self.rocket_instance.environment.get_gravity])      
         @property
         def get_torque_thrust(self):
             thrust_vector = np.array([
@@ -215,7 +217,7 @@ class Rocket(pygame.sprite.Sprite):
         def get_AOA_wind(self):            
             # range 0-360 (rocket_angle already in the range)
             angle_rocket = self.angle
-            angle_wind = self.wind_angle % 360
+            angle_wind = self.rocket_instance.environment.get_wind_angle % 360
             # difference
             relative_nunber = (angle_rocket - angle_wind)%360
             if relative_nunber > 180: relative_nunber -= 360
@@ -224,9 +226,13 @@ class Rocket(pygame.sprite.Sprite):
         @property
         def get_AOA_rocket(self):
             return self.angle - np.arctan2(self.velocity[1], self.velocity[0])
-        
     class Motor:
         def __init__(self):
+            """ TO-DO
+                1. ignition delay
+                2. Change of ISP
+                3. Sum thrust of motor, and check which motor changes angles
+            """
             ...
 
         def reset_variables(self, motor_settings, rocket_instance):
@@ -235,11 +241,9 @@ class Rocket(pygame.sprite.Sprite):
             self.current_thrust = 0
             self.current_thrust_perc = 0
 
-            self.gravity = self.rocket_instance.environment_settings["gravity"]
-
             self.reset(motor_settings)
 
-        def reset(self, motor_settings): # TODO: ignition delay, change of isp, num_motors
+        def reset(self, motor_settings):
             current_stage = self.rocket_instance.current_stage
 
             self.max_thrust = motor_settings[str(current_stage)]["parts"]["engine"]["thrust"]
@@ -247,8 +251,9 @@ class Rocket(pygame.sprite.Sprite):
             self.ignition_delay = motor_settings[str(current_stage)]["parts"]["engine"]["ignition_delay"]
             self.max_angle = motor_settings[str(current_stage)]["parts"]["engine"]["max_angle"]
 
-        def burn_fuel(self, time_step):
-            mass_flow_rate = self.get_thrust / (self.isp * self.gravity)
+        def burn_fuel(self, time_step: float):
+            gravity = self.rocket_instance.environment.get_gravity
+            mass_flow_rate = self.get_thrust / (self.isp * gravity)
             fuel_consumed = mass_flow_rate * time_step
 
             if self.rocket_instance.body.fuel_mass >= fuel_consumed:
@@ -269,7 +274,6 @@ class Rocket(pygame.sprite.Sprite):
             thrust_y = self.get_thrust * np.cos(angle_radians)
             return np.array([thrust_x, thrust_y])
 
-
     def __init__(self):
         pygame.sprite.Sprite.__init__(self)
         super().__init__()
@@ -282,7 +286,7 @@ class Rocket(pygame.sprite.Sprite):
         self.body = self.Body()
         self.motor = self.Motor()
 
-    def launch(self, time_step):
+    def launch(self, time_step: float):
         # self.motor.burn_fuel(time_step)
         self.body.update(time_step)
 
@@ -299,7 +303,7 @@ class Rocket(pygame.sprite.Sprite):
         elif keys[pygame.K_p]: self.body.wind_angle += 1
         elif keys[pygame.K_o]: self.body.wind_angle -= 1
 
-    def collision(self, group_rect: list) -> None:
+    def collision(self, group_rect: list):
         if self.body.direction.magnitude() != 0: self.body.direction = self.body.direction.normalize()
 
         for sprite in group_rect:
@@ -310,7 +314,7 @@ class Rocket(pygame.sprite.Sprite):
                     self.body.position[1] = self.rect.centery
                     self.body.velocity = np.array([0.0, 0.0])
 
-    def render(self, screen, offset):
+    def render(self, screen: pygame.Surface, offset: list):
         scaled_image = pygame.transform.smoothscale(self.copy_image, self.body.size)
         rotated_image = pygame.transform.rotate(scaled_image, self.body.angle)
         self.rect = rotated_image.get_rect(center=self.body.position)
@@ -331,13 +335,13 @@ class Rocket(pygame.sprite.Sprite):
         )
         pygame.draw.circle(screen, "green", center_wind, 5)
 
-
-    def restart(self, launch_pad_settings, launch_pad_position):
+    def restart(self, launch_pad_settings: dict, launch_pad_position: pygame.Vector2, environment):
         self.environment_settings = launch_pad_settings
         self.launch_pad_position = launch_pad_position
+        self.environment = environment
 
         self.current_stage = 1
-        with open("../assets/rocket_files/rocket_config.json", "r") as file:
+        with open("config/rocket_config.json", "r") as file:
             rocket_config = json.load(file)
 
         self.motor.reset_variables(rocket_config["parts"], self)

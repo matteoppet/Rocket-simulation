@@ -1,0 +1,9 @@
+{
+    "planet_1": {
+        "air density": 1.221,
+        "wind speed": 2.0,
+        "wind angle": 0,
+        "gravity": 9.81,
+        "temperature": 15
+    }
+}
