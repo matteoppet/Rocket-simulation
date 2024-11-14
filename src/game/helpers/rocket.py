@@ -43,8 +43,7 @@ class Rocket(pygame.sprite.Sprite):
             self.center_of_gravity = np.array(self.get_center_of_gravity)
             self.center_of_pressure = np.array(self.get_center_of_pressure)
 
-
-            net_force = self.rocket_instance.motor.get_thrust_vector - self.get_weight - self.get_drag
+            net_force = self.rocket_instance.motor.get_thrust_vector - self.get_weight - self.get_drag - self.get_lift
             self.acceleration = net_force/self.get_total_mass
             self.velocity += self.acceleration * time_step
 
@@ -58,6 +57,19 @@ class Rocket(pygame.sprite.Sprite):
             self.rocket_instance.rect.center = self.position
             self.direction.y = self.velocity[1]
 
+        @property
+        def get_lift(self):
+            air_density = self.rocket_instance.environment_settings["air density"]
+            relative_velocity = self.get_relative_velocity
+            cross_sectional_area_fins = self.rocket_config[str(self.rocket_instance.current_stage)]["parts"]["fins"]["count"] * ((1/2) * self.rocket_config[str(self.rocket_instance.current_stage)]["parts"]["fins"]["width"] * self.rocket_config[str(self.rocket_instance.current_stage)]["parts"]["fins"]["height"])
+            angle_of_attack = self.get_AOA_rocket
+
+            aspect_ratio_fins = self.rocket_config[str(self.rocket_instance.current_stage)]["parts"]["fins"]["height"] / self.rocket_config[str(self.rocket_instance.current_stage)]["parts"]["fins"]["width"]
+            fin_efficiency_factor = 2/(1+np.sqrt(1 + (aspect_ratio_fins/2)))
+            lift_coeff = min((fin_efficiency_factor*np.radians(angle_of_attack)), 2.0)
+
+            lift = (1/2) * air_density * relative_velocity**2 * lift_coeff * cross_sectional_area_fins
+            return lift
         @property
         def get_center_of_gravity(self):
             total_mass_rocket = self.get_total_mass
@@ -141,14 +153,22 @@ class Rocket(pygame.sprite.Sprite):
             else:
                 raise ValueError("total aerodynamic force is zero, invalid CP calculation")
         @property
-        def get_cross_sectional_area(self): # TODO implement calculation for different shapes
-            if self.angle == 0 or self.angle == 180:
-                return np.pi*((self.size.x/2)**2)
-            if self.angle == 90 or self.angle == 270:
-                return self.size.x*self.size.y
-            else:
-                angle_in_radians = np.radians(self.angle)
-                return (self.size.x * abs(np.sin(angle_in_radians))) + (self.size.y * abs(np.cos(angle_in_radians)))
+        def get_cross_sectional_area(self):
+            # calculate area body
+            diameter_body = self.rocket_config[str(self.rocket_instance.current_stage)]["parts"]["body"]["width"]
+            area_body = np.pi*(diameter_body/2)**2
+
+            # calculate area fins
+            root_chord_fins = self.rocket_config[str(self.rocket_instance.current_stage)]["parts"]["fins"]["width"]
+            height_fins = self.rocket_config[str(self.rocket_instance.current_stage)]["parts"]["fins"]["height"]
+            area_fin = (1/2) * root_chord_fins * height_fins
+            area_total_fin = self.rocket_config[str(self.rocket_instance.current_stage)]["parts"]["fins"]["count"] * area_fin
+
+            # sum up
+            total_cross_sectional_area = area_body + area_total_fin
+
+            # return total area
+            return total_cross_sectional_area  
         @property
         def get_relative_velocity(self):
             return self.velocity - self.get_wind_velocity_vector
@@ -189,8 +209,8 @@ class Rocket(pygame.sprite.Sprite):
             total_torque = self.get_torque_thrust + self.get_torque_wind
             return total_torque      
         @property
-        def get_inertia(self): # TODO: upgrade
-            return (1/12) * self.get_total_mass * (3 * np.power(self.size.x/2, 2) + np.power(self.size.y, 2))       
+        def get_inertia(self):
+            return (1/12) * self.get_total_mass * (3 * (self.size.x/2)**2 + self.size.y**2)       
         @property
         def get_AOA_wind(self):            
             # range 0-360 (rocket_angle already in the range)
@@ -201,7 +221,10 @@ class Rocket(pygame.sprite.Sprite):
             if relative_nunber > 180: relative_nunber -= 360
 
             return relative_nunber
-
+        @property
+        def get_AOA_rocket(self):
+            return self.angle - np.arctan2(self.velocity[1], self.velocity[0])
+        
     class Motor:
         def __init__(self):
             ...
@@ -314,7 +337,7 @@ class Rocket(pygame.sprite.Sprite):
         self.launch_pad_position = launch_pad_position
 
         self.current_stage = 1
-        with open("../assets/rocket_files/rocket_config_2.json", "r") as file:
+        with open("../assets/rocket_files/rocket_config.json", "r") as file:
             rocket_config = json.load(file)
 
         self.motor.reset_variables(rocket_config["parts"], self)

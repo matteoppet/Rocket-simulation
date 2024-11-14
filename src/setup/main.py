@@ -14,7 +14,7 @@ class Setup_Window(ttk.Frame):
         self.font = "TkDefaultFont"
         self.current_stage = 1
 
-        self.path_json_config = "../assets/rocket_files/rocket_config_2.json"
+        self.path_json_config = "../assets/rocket_files/rocket_config.json"
         with open(self.path_json_config, "r") as file:
             self.rocket_config = json.load(file)
         file.close()
