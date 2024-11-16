@@ -192,7 +192,7 @@ class Rocket(pygame.sprite.Sprite):
             return self.dry_mass + self.fuel_mass     
         @property
         def get_weight(self):
-            return np.array([0, self.get_total_mass * self.rocket_instance.environment.get_gravity])      
+            return np.array([0, self.get_total_mass * self.rocket_instance.environment.get_gravity(self.get_altitude)])      
         @property
         def get_torque_thrust(self):
             thrust_vector = np.array([
@@ -226,6 +226,10 @@ class Rocket(pygame.sprite.Sprite):
         @property
         def get_AOA_rocket(self):
             return self.angle - np.arctan2(self.velocity[1], self.velocity[0])
+        @property
+        def get_altitude(self):
+            return self.rocket_instance.launch_pad_position.y - self.position[1]
+
     class Motor:
         def __init__(self):
             """ TO-DO
@@ -252,27 +256,34 @@ class Rocket(pygame.sprite.Sprite):
             self.max_angle = motor_settings[str(current_stage)]["parts"]["engine"]["max_angle"]
 
         def burn_fuel(self, time_step: float):
-            gravity = self.rocket_instance.environment.get_gravity
-            mass_flow_rate = self.get_thrust / (self.isp * gravity)
+            gravity = self.rocket_instance.environment.get_gravity(self.rocket_instance.body.get_altitude)
+            current_isp = self.get_isp
+            if (current_isp*gravity) > 0.0: mass_flow_rate = self.get_thrust / (current_isp * gravity)
+            else: mass_flow_rate = 0.0
             fuel_consumed = mass_flow_rate * time_step
-
+            
             if self.rocket_instance.body.fuel_mass >= fuel_consumed:
                 self.rocket_instance.body.fuel_mass -= fuel_consumed
                 # TODO: csv text (burned fuel each time step)
             else:
                 self.rocket_instance.body.fuel_mass = 0
-                self.current_thrust_perc = 0            
+                self.current_thrust_perc = 0.0
                 # TODO csv test (no enough fuel to sustain burn)
 
         @property
-        def get_thrust(self):
+        def get_thrust(self) -> float:
             return (self.current_thrust_perc/100)*self.max_thrust
         @property
-        def get_thrust_vector(self):
+        def get_thrust_vector(self) -> np.array:
             angle_radians = np.radians(self.rocket_instance.body.angle)
             thrust_x = self.get_thrust * np.sin(angle_radians)
             thrust_y = self.get_thrust * np.cos(angle_radians)
             return np.array([thrust_x, thrust_y])
+        @property
+        def get_isp(self) -> float:
+            throttle = self.current_thrust_perc/100
+            isp_current = self.isp*throttle
+            return isp_current
 
     def __init__(self):
         pygame.sprite.Sprite.__init__(self)
@@ -287,16 +298,16 @@ class Rocket(pygame.sprite.Sprite):
         self.motor = self.Motor()
 
     def launch(self, time_step: float):
-        # self.motor.burn_fuel(time_step)
+        self.motor.burn_fuel(time_step)
         self.body.update(time_step)
 
     def controls(self):
         keys = pygame.key.get_pressed()
 
-        if keys[pygame.K_x]: self.motor.current_thrust_perc = 100 # cut-on
-        elif keys[pygame.K_z]: self.motor.current_thrust_perc = 0 # cut-off
-        elif keys[pygame.K_w]: self.motor.current_thrust_perc += 1 if self.motor.current_thrust_perc < 100 else 0 # gradually thrust increase
-        elif keys[pygame.K_s]: self.motor.current_thrust_perc -= 1 if self.motor.current_thrust_perc > 0 else 0 # gradually thrust decrease
+        if keys[pygame.K_x]: self.motor.current_thrust_perc = 100.0 # cut-on
+        elif keys[pygame.K_z]: self.motor.current_thrust_perc = 0.0 # cut-off
+        elif keys[pygame.K_w]: self.motor.current_thrust_perc += 10 if self.motor.current_thrust_perc < 100.0 else 0.0 # gradually thrust increase
+        elif keys[pygame.K_s]: self.motor.current_thrust_perc -= 10 if self.motor.current_thrust_perc > 0.0 else 0.0 # gradually thrust decrease
         elif keys[pygame.K_d]: self.motor.current_angle += 1 if self.motor.current_angle < self.motor.max_angle else 0 # gradually change thrust angle +
         elif keys[pygame.K_a]: self.motor.current_angle -= 1 if self.motor.current_angle > -self.motor.max_angle else 0 # grdually change thrust angle -
     

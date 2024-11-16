@@ -19,14 +19,15 @@ class Environment:
 
         self.current_planet = "planet_1"
 
-        self.wind_speed = environment_config[self.current_planet]["wind"]
-        self.wind_angle = environment_config[self.current_planet]["wind"]
+        self.wind_speed = environment_config[self.current_planet]["wind speed"]
+        self.wind_angle = environment_config[self.current_planet]["wind angle"]
 
         self.gravity = environment_config[self.current_planet]["gravity"]
         self.air_density = environment_config[self.current_planet]["air density"]
 
         self.temperature = environment_config[self.current_planet]["temperature"]
-
+        self.radius_planet = environment_config[self.current_planet]["radius"]
+        
     def create_environment(self, launch_pad_settings: dict):
         launch_pad_altitude = launch_pad_settings["elevation"]
         launch_pad_angle = launch_pad_settings["launch angle"]
@@ -49,13 +50,18 @@ class Environment:
             if offset is not None: object_pos = object.rect.topleft - offset
             else: object_pos = object.rect.topleft
 
-            screen.blit(object.image, object_pos)
+            size_image = pygame.Vector2(object.image.get_size()[0], object.image.get_size()[1])
+            scaled_image = pygame.transform.smoothscale(object.image, size_image)
 
+            screen.blit(scaled_image, object_pos)
+
+    def get_gravity(self, altitude) -> float:
+        radius_planet = self.radius_planet*1000 # in meters
+        gravity_at_sea_level = self.gravity
+        new_gravity = gravity_at_sea_level*(radius_planet/(radius_planet+altitude))**2
+        return new_gravity
     @property
-    def get_gravity(self): # TODO 
-        return self.gravity
-    @property
-    def get_air_density(self): # TODO
+    def get_air_density(self): # TODO changes with altitude
         return self.air_density
     @property
     def get_wind_speed(self):
