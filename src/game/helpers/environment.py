@@ -1,5 +1,7 @@
 import pygame
 import json
+import math
+import numpy as np
 
 class Object(pygame.sprite.Sprite):
     def __init__(self, rect: pygame.Rect, group: pygame.sprite.Group):
@@ -60,12 +62,21 @@ class Environment:
         gravity_at_sea_level = self.gravity
         new_gravity = gravity_at_sea_level*(radius_planet/(radius_planet+altitude))**2
         return new_gravity
-    @property
-    def get_air_density(self): # TODO changes with altitude
-        return self.air_density
+    def get_air_density(self, altitude, decay_constant=0.0001) -> float: # TODO changes with altitude
+        # if altitude < 100000: new_air_density = self.air_density * (1 - (altitude/100000) * 2)
+        # else: new_air_density = self.air_density * (1 - (altitude/100000))
+        # return new_air_density
+        current_air_density = self.air_density * math.exp(-decay_constant * altitude)
+        return current_air_density
     @property
     def get_wind_speed(self):
         return self.wind_speed
     @property
     def get_wind_angle(self):
         return self.wind_angle
+    @property 
+    def get_wind_velocity_vector(self):
+        return np.array([
+            self.get_wind_speed * np.sin(np.radians(self.get_wind_angle)),
+            self.get_wind_speed * np.cos(np.radians(self.get_wind_angle))
+        ])

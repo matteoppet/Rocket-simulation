@@ -9,14 +9,14 @@
                     "height": 15.0,
                     "width": 5.0,
                     "mass": 162.351,
-                    "position_from_base": 74.0
+                    "position_from_nose": 74.0
                 },
                 "body": {
                     "shape": "cylinder",
                     "height": 70.0,
                     "width": 5.0,
                     "mass": 1000.0,
-                    "position_from_base": 4.0
+                    "position_from_nose": 4.0
                 },
                 "fins": {
                     "shape": "triangle",
@@ -24,7 +24,7 @@
                     "height": 3.0,
                     "width": 9.0,
                     "mass": 110.16,
-                    "position_from_base": 4.0
+                    "position_from_nose": 4.0
                 },
                 "engine": {
                     "name": "test",
@@ -34,7 +34,7 @@
                     "thrust": 40000.0,
                     "isp": 200.0,
                     "mass": 200.0,
-                    "position_from_base": 0.0,
+                    "position_from_nose": 0.0,
                     "ignition_delay": 0.0,
                     "num_motors": 0,
                     "max_angle": 10.0

@@ -1,7 +1,5 @@
 from tkinter import *
-from tkinter import ttk
-from tkinter import filedialog
-import csv
+from tkinter import ttk, Menu
 import json
 
 from game.game_window import Simulation
@@ -23,12 +21,12 @@ class Setup_Window(ttk.Frame):
         with open(self.path_json_environment_config, "r") as file:
             self.environment_config = json.load(file)
         file.close()
-
+        
         self.launch_pad_settings = {
             "elevation": 0,
             "launch angle": 0,
         }
-    
+
     def run(self):
         self.create_notebook()
 
@@ -37,6 +35,7 @@ class Setup_Window(ttk.Frame):
         self.load_frame_flight_simulation(self.flight_frame)
 
         self.master.mainloop()
+
 
     def create_notebook(self):
         notebook = ttk.Notebook(self.master)
@@ -95,7 +94,7 @@ class Setup_Window(ttk.Frame):
     def load_frame_flight_simulation(self, frame):
         def run_simulation():
             sim = Simulation()
-            sim.restart(self.launch_pad_settings)
+            sim.run(self.launch_pad_settings)
 
         launch_button = Button(master=frame, text="launch", background="#76B355", command=lambda: run_simulation())
         launch_button.grid(row=0, column=0)
