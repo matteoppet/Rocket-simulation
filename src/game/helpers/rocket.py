@@ -138,8 +138,8 @@ class Physics:
     
     def torque_thrust(self):
         thrust_vector = np.array([
-            self.thrust * np.sin(np.radians(self.motor.angle)),
-            self.thrust * np.cos(np.radians(self.motor.angle))
+            self.thrust * np.sin(np.radians(-self.motor.angle)),
+            self.thrust * np.cos(np.radians(-self.motor.angle))
         ])
         local_offset = self.motor.local_offset
         lever_arm = self.get_center_of_gravity() - local_offset
@@ -289,7 +289,9 @@ class Motor(pygame.sprite.Sprite):
         self.position = pygame.Vector2(self.rect.centerx, self.rect.centery)
 
     def render(self, screen):
-        screen.blit(self.image, self.rect)
+        rotated_image = pygame.transform.rotate(self.image, -self.angle)
+        rotated_rect = rotated_image.get_rect(center=self.position)
+        screen.blit(rotated_image, rotated_rect)
 
     def update(self, a, b):
         offset = pygame.math.Vector2(0, self.size.y // 2 + self.parent.size.y // 2)
@@ -342,8 +344,8 @@ class Rocket:
         if keys[pygame.K_x]: active_motor.current_thrust_perc = 100
         elif keys[pygame.K_z]: active_motor.current_thrust_perc = 0
 
-        if keys[pygame.K_a]: active_motor.angle = 15
-        elif keys[pygame.K_d]: active_motor.angle = -15
+        if keys[pygame.K_a]: active_motor.angle = active_motor.angle + 15
+        elif keys[pygame.K_d]: active_motor.angle = active_motor.angle - 15
 
         if keys[pygame.K_l]:
             component = self.components_sprite_group.sprites()[-2]
