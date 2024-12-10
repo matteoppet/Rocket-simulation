@@ -81,7 +81,7 @@ class Physics:
         return np.array([0, cg_position])
 
     def get_drag(self, components_list):
-        air_density = self.environment.get_air_density(self.rocket_instance.get_altitude)
+        air_density = self.environment.get_air_density(self.rocket_instance.get_altitude(self.components_list[0].position[1]))
         speed = np.linalg.norm(self.get_relative_velocity)
         cross_sectional_area = self.get_cross_sectional_area(components_list)
         drag_coeff = 0.6 # TODO: Change
@@ -112,9 +112,9 @@ class Physics:
                 fin_efficiency_factor = 2/(1+np.sqrt(1+(aspect_ratio_fins/2)))
                 break
         
-        air_density = self.environment.get_air_density(self.rocket_instance.get_altitude)
+        air_density = self.environment.get_air_density(self.rocket_instance.get_altitude(self.components_list[0].position[1]))
         relative_velocity = self.get_relative_velocity
-        angle_of_attack = self.rocket_instance.get_aoa
+        angle_of_attack = self.rocket_instance.get_aoa(components_list[0])
         cross_sectional_area = self.get_cross_sectional_area(components_list)
 
         if fins:
@@ -171,7 +171,7 @@ class Physics:
 
     @property
     def get_weight(self):
-        return np.array([0, self.total_mass * self.environment.get_gravity(self.rocket_instance.get_altitude)])
+        return np.array([0, self.total_mass * self.environment.get_gravity(self.rocket_instance.get_altitude(self.components_list[0].position[1]))])
 
 class Component(pygame.sprite.Sprite):
     def __init__(self, name, parent, attribs, group):
@@ -353,14 +353,14 @@ class Rocket:
             if component.is_attached:
                 component.detatch()
 
-    def collision(self):
-        raise NotImplementedError
-
-    @property
-    def get_altitude(self): # TODO
-        return 0
+    def collision(self, other_sprites):
+        collision_sprites = pygame.sprite.groupcollide(self.components_sprite_group, other_sprites, False, False)
+        if collision_sprites:
+            # TODO: create physics that will create a point of torque for the object when touching another object
+            ...
+            
+    def get_altitude(self, center_component_y):
+        return self.environment.base_terrain.y - center_component_y
     
-    @property
-    def get_aoa(self): # TODO
-        return 0
-    
+    def get_aoa(self, component):
+        return abs(self.environment.get_wind_angle - component.angle) 
