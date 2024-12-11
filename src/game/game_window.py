@@ -132,9 +132,8 @@ class Simulation:
             self.screen.fill("white")
 
             timestep = self.clock.tick(60)/1000.0
-            self.ROCKET.update(timestep)
+            self.ROCKET.update(timestep, self.ENVIRONMENT.ground_sprites)
             self.ROCKET.controls()
-            self.ROCKET.collision(self.ENVIRONMENT.ground_sprites)
 
             if self.track: 
                 self.CAMERA.render(self.ROCKET, self.ENVIRONMENT)
