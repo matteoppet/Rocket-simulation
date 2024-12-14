@@ -51,17 +51,25 @@ class Component(pygame.sprite.Sprite):
                             components.append(component)
                         else:
                             break
-                    acceleration, angular_acceleration = physics.apply(components)
+                    motor = next((component for component in list(reversed(components)) if component.name == "motor"), None)
+                    if motor: thrust = motor.get_thrust
+                    else: thrust = np.array(0)
+
+                    acceleration, angular_acceleration = physics.apply(components, thrust, motor)
                     self.velocity += acceleration * time_step
                     self.angular_velocity += angular_acceleration * time_step
 
                     self.position -= self.velocity
                     self.angle += self.angular_velocity
             else:
+                motor = next((component for component in list(reversed(self.detached_sprites_group_list)) if component.name == "motor"), None)
+                if motor: thrust = motor.get_thrust
+                else: thrust = np.array(0)
+
                 try: 
-                    acceleration, angular_acceleration = physics.apply(self.detached_sprites_group_list)
+                    acceleration, angular_acceleration = physics.apply(self.detached_sprites_group_list, thrust, motor)
                 except AttributeError:
-                    acceleration, angular_acceleration = physics.apply([self])
+                    acceleration, angular_acceleration = physics.apply([self], thrust, motor)
 
                 self.velocity += acceleration * time_step
                 self.angular_velocity += angular_acceleration * time_step
@@ -100,12 +108,11 @@ class Component(pygame.sprite.Sprite):
         self.angular_velocity = self.group.sprites()[0].angular_velocity
 
 class Motor(pygame.sprite.Sprite):
-    def __init__(self, name, parent, command_parent, attribs, group):
+    def __init__(self, name, parent, attribs, group):
         super().__init__(group)
         
         self.name = name
         self.parent = parent
-        self.command_parent = command_parent
         self.group = group
 
         self.local_offset = attribs["local_offset"]
