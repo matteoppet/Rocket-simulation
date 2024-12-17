@@ -83,30 +83,95 @@ class Simulation:
             self.ENVIRONMENT = Environment(self.WINDOW_SIZE)
             self.ENVIRONMENT.create_environment(launch_pad_settings)
             components = {
-                "nose": {
-                    "local_offset": pygame.Vector2(0, 0),
-                    "size": pygame.Vector2(2.51, 10.16),
-                    "shape": "cone",
-                    "color": "black",
-                    "mass": 1.0
+                1: {
+                    "nose": {
+                        "local_offset": pygame.Vector2(0, 0),
+                        "size": pygame.Vector2(20, 40),
+                        "shape": "cone",
+                        "color": "black",
+                        "mass": 162.351
+                    },
+                    "tube_1": {
+                        "local_offset": pygame.Vector2(0,40),
+                        "size": pygame.Vector2(20, 60),
+                        "shape": "cylinder",
+                        "color": "yellow",
+                        "mass": 1000.0
+                    },
+                    "motor": {
+                        "local_offset": pygame.Vector2(0, 100),
+                        "size": pygame.Vector2(10, 20),
+                        "shape": "cone",
+                        "color": "black",
+                        "mass": 200.0,
+                        "thrust": 50000,
+                        "angle_vectoring": 15,
+                        "isp": 0,
+                    },
                 },
-                "tube_1": {
-                    "local_offset": pygame.Vector2(0,10.16),
-                    "size": pygame.Vector2(2.51, 10.16),
-                    "shape": "cylinder",
-                    "color": "yellow",
-                    "mass": 3.0
-                },
-                "motor": {
-                    "local_offset": pygame.Vector2(0, 20.32),
-                    "size": pygame.Vector2(2.51, 1),
-                    "shape": "cone",
-                    "color": "black",
-                    "mass": 1.0,
-                    "thrust": 50000,
-                    "angle_vectoring": 15,
-                    "isp": 0,
+                2: {
+                    "tube_2": {
+                        "local_offset": pygame.Vector2(0,40),
+                        "size": pygame.Vector2(20, 60),
+                        "shape": "cylinder",
+                        "color": "yellow",
+                        "mass": 1000.0
+                    },
+                    "motor": {
+                        "local_offset": pygame.Vector2(0, 100),
+                        "size": pygame.Vector2(10, 20),
+                        "shape": "cone",
+                        "color": "black",
+                        "mass": 200.0,
+                        "thrust": 50000,
+                        "angle_vectoring": 15,
+                        "isp": 0,
+                    },
                 }
+                # "nose": {
+                #     "local_offset": pygame.Vector2(0, 0),
+                #     "size": pygame.Vector2(20, 40),
+                #     "shape": "cone",
+                #     "color": "black",
+                #     "mass": 162.351
+                # },
+                # "tube_1": {
+                #     "local_offset": pygame.Vector2(0,40),
+                #     "size": pygame.Vector2(20, 60),
+                #     "shape": "cylinder",
+                #     "color": "yellow",
+                #     "mass": 1000.0
+                # },
+                # "motor_1": {
+                #     "local_offset": pygame.Vector2(0, 100),
+                #     "size": pygame.Vector2(10, 20),
+                #     "shape": "cone",
+                #     "color": "black",
+                #     "mass": 200.0,
+                #     "thrust": 50000,
+                #     "angle_vectoring": 15,
+                #     "isp": 0,
+                # },
+                # "tube_2": {
+                #     "local_offset": pygame.Vector2(0, 120),
+                #     "size": pygame.Vector2(10, 20),
+                #     "shape": "cone",
+                #     "color": "black",
+                #     "mass": 200.0,
+                #     "thrust": 50000,
+                #     "angle_vectoring": 15,
+                #     "isp": 0,
+                # },
+                # "motor_2": {
+                #     "local_offset": pygame.Vector2(0, 140),
+                #     "size": pygame.Vector2(10, 20),
+                #     "shape": "cone",
+                #     "color": "black",
+                #     "mass": 200.0,
+                #     "thrust": 50000,
+                #     "angle_vectoring": 15,
+                #     "isp": 0,
+                # }
             }
             self.ROCKET = Rocket(components, self.ENVIRONMENT)
             self.CAMERA = Camera()
@@ -141,8 +206,3 @@ class Simulation:
 
         pygame.display.quit()
         self.screen = None
-
-
-# physics class more dynamic and make less calculations
-# the overall physics is correct
-# implement zoom

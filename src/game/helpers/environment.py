@@ -4,11 +4,13 @@ import math
 import numpy as np
 
 class Object(pygame.sprite.Sprite):
-    def __init__(self, rect: pygame.Rect, group: pygame.sprite.Group):
+    def __init__(self, name, rect: pygame.Rect, group: pygame.sprite.Group):
         super().__init__(group)
         self.image = pygame.Surface(rect.size)
         self.rect = rect
         self.image.fill("black")
+
+        self.name = name
         
 class Environment:
     def __init__(self, window_size: tuple):
@@ -42,10 +44,10 @@ class Environment:
         launch_pad_pole_1 = pygame.Rect(self.launch_pad.x, self.launch_pad.bottomleft[1], 10, altitude_poles)
         launch_pad_pole_2 = pygame.Rect(self.launch_pad.topright[0]-self.launch_pad.height, self.launch_pad.bottomright[1], 10, altitude_poles)
 
-        Object(self.base_terrain, self.ground_sprites)
-        Object(self.launch_pad, self.ground_sprites)
-        Object(launch_pad_pole_1, self.ground_sprites)
-        Object(launch_pad_pole_2, self.ground_sprites)
+        Object("base_terrain", self.base_terrain, self.ground_sprites)
+        Object("launch_pad", self.launch_pad, self.ground_sprites)
+        Object("launch_pad_pole_1", launch_pad_pole_1, self.ground_sprites)
+        Object("launch_pad_pole_2", launch_pad_pole_2, self.ground_sprites)
 
     def render(self, screen: pygame.Surface, offset: tuple):
         for object in self.ground_sprites:
@@ -63,9 +65,6 @@ class Environment:
         new_gravity = gravity_at_sea_level*(radius_planet/(radius_planet+altitude))**2
         return new_gravity
     def get_air_density(self, altitude, decay_constant=0.0001) -> float: # TODO changes with altitude
-        # if altitude < 100000: new_air_density = self.air_density * (1 - (altitude/100000) * 2)
-        # else: new_air_density = self.air_density * (1 - (altitude/100000))
-        # return new_air_density
         current_air_density = self.air_density * math.exp(-decay_constant * altitude)
         return current_air_density
     @property

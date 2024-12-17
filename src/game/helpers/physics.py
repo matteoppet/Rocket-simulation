@@ -1,19 +1,19 @@
 import numpy as np
 import pygame
-from typing import Union, Optional
 
 
 class Physics:
     """ A class that simulates physics.
 
-        Attributes (each component):
-            Name (str): The name of the object
-            Mass (float): The mass of the object
-            Size (Vector): The size of the object
-            Position (array): The position of the object
-            Shape (str): The shape of the object
-            Angle (float): The angle of the object, in degrees
-            Local_offset (array): The offset of the object (if the object is unique, offset is 0, otherwise the distance from the main component)
+        Components (variables to pass to each functions):
+            Attributes (each component):
+                Name (str): The name of the object
+                Mass (float): The mass of the object
+                Size (Vector): The size of the object
+                Position (array): The position of the object
+                Shape (str): The shape of the object
+                Angle (float): The angle of the object, in degrees
+                Local_offset (array): The offset of the object (if the object is unique, offset is 0, otherwise the distance from the main component)
         
         Methods:
             __init__(self, rocket_instance, environment): Initializes the rocket main class, and the main environment class
@@ -36,7 +36,7 @@ class Physics:
         self.environment = environment
         self.rocket_instance = rocket_instance
 
-    def apply(self, components: list, thrust: np.asarray, motor: pygame.sprite.Sprite | None) -> tuple:
+    def apply(self, components: list, thrust: np.asarray, motor: pygame.sprite.Sprite | None, colliding: bool) -> tuple:
         self.thrust = thrust
         self.motor = motor
 
@@ -44,7 +44,11 @@ class Physics:
         for component in components:
             total_mass += component.mass
 
-        net_force = self.get_thrust_vector(components) - self.get_weight(components) - self.get_drag(components) - self.get_lift(components)
+        if colliding: 
+            net_force = self.get_thrust_vector(components)
+        else:
+            net_force = self.get_thrust_vector(components) - self.get_weight(components) - self.get_drag(components) - self.get_lift(components)
+
         acceleration = net_force / total_mass
         angular_acceleration = self.get_total_torque(components) / self.get_inertia(components)
 
