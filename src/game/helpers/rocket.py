@@ -1,225 +1,258 @@
-import pygame
+import pygame 
 import numpy as np
 from game.helpers.physics import Physics
 
-WORLD_OFFSET = pygame.Vector2(640, 360)
-
-class Component(pygame.sprite.Sprite):
-    def __init__(self, name: str, parent: pygame.sprite.Sprite, attribs: dict, group: pygame.sprite.Group):
-        super().__init__(group)
-
-        self.name = name
-        self.parent = parent
-        self.child = None
-        self.group = group
-
-        self.local_offset = attribs["local_offset"]
-        self.size = attribs["size"]
-        self.mass = attribs["mass"]
-        self.shape = attribs["shape"]
-
-        self.is_attached = True
-        self.angle = 0
-        self.acceleration = np.array([0.0, 0.0])
-        self.velocity = np.array([0.0, 0.0])
-        self.angular_velocity = 0
-
-        self.image = pygame.Surface(self.size, pygame.SRCALPHA)
-        self.image.fill("blue")
-        self.rect = self.image.get_rect(topleft=WORLD_OFFSET+self.local_offset)
-
-        self.position = pygame.Vector2(self.rect.center[0], self.rect.center[1])
-
-    def render(self, screen: pygame.Surface):
-        rotated_image = pygame.transform.rotate(self.image, -self.angle)
-        rotated_rect = rotated_image.get_rect(center=self.position)
-        screen.blit(rotated_image, rotated_rect)
-
-    def update(self, physics: classmethod, time_step: int, colliding: bool, rocket, motor_group):
-        # if its not colliding, move the component else stop moving
-        if self.is_attached:
-            # if its attached and has a parent, follow the parent else, move itself
-            if self.parent:
-                self.copy_position()
-            else:
-                components = []
-                for stage in rocket:
-                    if stage[1] == True:
-                        for sprite in stage[0]:
-                            components.append(sprite)
-                self.update_position(physics, components, time_step, colliding, motor_group)
-        else:
-            self.update_position(physics, self.group.sprites(), time_step, colliding, motor_group)
-
-        self.rect.center = self.position
-
-    
-    def update_position(self, physics, group, time_step, colliding, motor_group):
-        thrust = 0
-        for motor in reversed(list(motor_group)):
-            if motor.active:
-                thrust = motor.get_thrust
-
-        acceleration, angular_acceleration = physics.apply(group, thrust, motor, colliding)
-
-        if colliding:
-            self.velocity = np.array([0.0, 0.0])
-
-        self.velocity += acceleration * time_step
-        self.angular_velocity += angular_acceleration * time_step
-
-        self.angle += self.angular_velocity
-        self.position -= self.velocity
-
-
-    def copy_position(self):
-        offset = pygame.math.Vector2(0, self.size.y // 2 + self.parent.size.y // 2)
-        offset.rotate_ip(self.parent.angle)
-
-        self.angle = self.parent.angle
-        self.position = self.parent.position + offset
-
-
-    def detatch(self, first_stage):
-        """ 
-            when a component is detatched, it will create a group for all the components below it, 
-            it will iterate in a reversed list of the old group of all sprites, (from bottom to top), it will add everything to the new group and stop when it encounter the not attached component,
-            and it will copy the velocity from the nose.
-        """
-        self.is_attached = False
-
-        for component in self.group:
-            if component.name == "motor":
-                component.deactivate()
-
-        self.velocity = first_stage.sprites()[0].velocity.copy()
-        self.angular_velocity = first_stage.sprites()[0].angular_velocity
-
-class Motor(pygame.sprite.Sprite):
-    def __init__(self, name, parent, attribs, group):
-        super().__init__(group)
-        
-        self.name = name
-        self.parent = parent
-        self.group = group
-
-        self.local_offset = attribs["local_offset"]
-        self.size = attribs["size"]
-        self.mass = attribs["mass"]
-        self.shape = attribs["shape"]
-
-        self.is_attached = True
-        self.active = False
-        self.angle = 0
-        self.max_angle_vectoring = attribs["angle_vectoring"]
-        self.max_thrust = attribs["thrust"]
-        self.isp = attribs["isp"]
-
-        self.angular_velocity = 0
-
-        self.current_thrust_perc = 0
-
-        self.image = pygame.Surface(self.size, pygame.SRCALPHA)
-        self.image.fill("black")
-        self.rect = self.image.get_rect(topleft=WORLD_OFFSET+self.local_offset)
-
-        self.position = pygame.Vector2(self.rect.centerx, self.rect.centery)
-
-    def render(self, screen):
-        rotated_image = pygame.transform.rotate(self.image, -self.angle)
-        rotated_rect = rotated_image.get_rect(center=self.position)
-        screen.blit(rotated_image, rotated_rect)
-
-    def update(self, *args):
-        offset = pygame.math.Vector2(0, self.size.y // 2 + self.parent.size.y // 2)
-        offset.rotate_ip(self.parent.angle)
-
-        self.angle = self.parent.angle
-        self.position = self.parent.position + offset
-        self.rect.center = self.position
-
-    def deactivate(self):
-        self.current_thrust_perc = 0
-
-    @property
-    def get_thrust(self):
-        return (self.current_thrust_perc/100)*self.max_thrust
-
 class Rocket:
-    def __init__(self, components, environment):
-        self.components = components
-        self.motor_sprite_group = pygame.sprite.Group() 
+    """ This class represent all the rocket, contians the overall data and has all the stages in it
+        
+        To create and use a rocket, you only need to call this class and the relative methods
 
-        self.groups_stages = []
+        Methods:
+            1. __init__ = initialize each stage with each component, set up the physics too
+            2. render = calls the render function of each stage
+            3. update = calls the update function of each stage
+            4. get_altitude = returns the altitude of the rocket
+            5. get_aoa = returns the angle of attack of the rocket
+    """
+    def __init__(self, rocket_dict_config: dict, environment):
+        self.stages = pygame.sprite.Group()
+        self.WORLD_OFFSET = pygame.Vector2(640, 360)
+        self.physics = Physics(self, environment)
+
         parent = None
-        for stage, components in self.components.items():
-            stage_group = pygame.sprite.Group()
+        for stage, components in rocket_dict_config.items():
+            current_stage = Stage(stage, self)
             for component, attribs in components.items():
-                if component == "motor":
-                    Motor(component, parent, attribs, [stage_group, self.motor_sprite_group])
+                if "motor" in component:
+                    current_stage.motor = Stage.Motor(component, current_stage, parent, attribs, current_stage.components_group, self)
                 else:
-                    parent = Component(component, parent, attribs, stage_group)
+                    parent = Stage.Component(component, current_stage, parent, attribs, current_stage.components_group, self)
 
-            self.groups_stages.append([stage_group, True])
-
-        self.environment = environment
-        self.physics = Physics(self, self.environment)
-
-        self.count = 0
+            self.stages.add(current_stage)
 
     def render(self, screen):
-        for group in self.groups_stages:
-            for sprite in group[0]:
-                sprite.render(screen)
-
-    def update(self, time_step, other_sprites: pygame.sprite.Group):
-        for group in self.groups_stages:
-            colliding = self.collision(group[0], other_sprites)
-            group[0].update(self.physics, time_step, colliding, self.groups_stages, self.motor_sprite_group)
-
-    def collision(self, other_sprites: pygame.sprite.Group, group_component: pygame.sprite.Group):
-        collision = pygame.sprite.groupcollide(group_component, other_sprites, False, False)
-        if collision:
-            return True
-        return False
+        for stage in self.stages:
+            stage.render(screen)
+    
+    def update(self, time_step):
+        for stage in self.stages:
+            stage.update(time_step)
 
     def controls(self):
         keys = pygame.key.get_pressed()
 
-        active_motor = None
-        for group in list(reversed(self.groups_stages)):
-            if group[1] == True:
-                for sprite in list(reversed(group[0].sprites())):
-                    if sprite.name == "motor":
-                        active_motor = sprite
-                        sprite.active = True
+        motor = None
+        for stage in list(reversed(self.stages.sprites())):
+            if stage.attached:
+                motor = stage.motor
+                break
 
-        if active_motor:
-            if keys[pygame.K_x]: active_motor.current_thrust_perc = 100
-            elif keys[pygame.K_z]: active_motor.current_thrust_perc = 0
+        if motor is not None:
+            if keys[pygame.K_x]: motor.current_thrust_perc = 100
+            elif keys[pygame.K_z]: motor.current_thrust_perc = 0
 
-            if keys[pygame.K_a]: active_motor.angle = active_motor.angle + 15
-            elif keys[pygame.K_d]: active_motor.angle = active_motor.angle - 15
+            if keys[pygame.K_a]: motor.angle = motor.angle + 15
+            if keys[pygame.K_d]: motor.angle = motor.angle - 15
 
-        if keys[pygame.K_l]:
-            for stage in list(reversed(self.groups_stages)):
-                if stage[1] == True:
-                    separated_stage = stage[0]
-                    first_stage = self.groups_stages[0]
-                    stage[1] = False
+        if keys[pygame.K_l]: 
+            for stage in list(reversed(self.stages.sprites())):
+                if stage.attached:
+                    stage.detatch()
                     break
-            
-            try:
-                for component in separated_stage:
-                    if component.name != "motor":
-                        component.detatch(first_stage[0])
-            except UnboundLocalError:
-                pass
 
+    def collision(self, other_sprites_group):
+        components = [component for stage in self.stages for component in stage.components_group]
+        collision = pygame.sprite.groupcollide(components, other_sprites_group, False, False)
+
+        for key in collision.keys():
+            self.stages.sprites()[int(key.stage.name)-1].collision()
+
+    def get_altitude(self, x):
+        return 0 
+    
+    def get_aoa(self, x):
+        return 0
+
+
+class Stage(pygame.sprite.Sprite):
+    """ This class represent each stage the rocket has, all the components and the data
+
+        Each stage has:
+            1. name (str)
+            2. components (sprite.Group)
+            3. motor
+            4. if is attached to other stages
+            5. instance of the main rocket class
+
+        Inner Classes:
+            1. Component = each component is initializated with the class Component, inside it has some variables describing the component
+            2. Motor = specific class for the motor component
+
+        Methods:
+            1. __init__ = initalize the class with different attributes
+            2. render = blit all the components of the stage on the screen
+            3. update = update all the components position of the stage (bit more complicated)
+    """
+    class Component(pygame.sprite.Sprite):
+        def __init__(self, name: str, stage, parent: pygame.sprite.Sprite, attribs: dict, group: pygame.sprite.Group, rocket: classmethod):
+            super().__init__(group)
+
+            self.name = name
+            self.parent = parent 
+            self.group = group
+            self.rocket = rocket
+            self.stage = stage
+
+            self.local_offset = attribs["local_offset"]
+            self.size = attribs["size"]
+            self.mass = attribs["mass"]
+            self.shape = attribs["shape"]
+
+            self.angle = 0
+            self.acceleration = np.array([0.0,0.0])
+            self.velocity = np.array([0.0,0.0])
+            self.angular_velocity = 0
+
+            self.image = pygame.Surface(self.size, pygame.SRCALPHA)
+            self.image.fill("blue")
+            self.rect = self.image.get_rect(topleft=rocket.WORLD_OFFSET+self.local_offset)
+
+            self.position = pygame.Vector2(self.rect.centerx, self.rect.centery)
+
+        def render(self, screen):
+            rotated_image = pygame.transform.rotate(self.image, -self.angle)
+            rotated_rect = rotated_image.get_rect(center=self.position)
+            screen.blit(rotated_image, rotated_rect)
+
+        def update(self, motor, components, time_step, colliding):
+            thrust = 0
+            if motor is not None:
+                thrust = motor.get_thrust()
+
+            acceleration, angular_acceleration = self.rocket.physics.apply(components, thrust, motor, False)
+            self.velocity += acceleration * time_step
+            self.angular_velocity += angular_acceleration * time_step
+
+            self.angle += self.angular_velocity
+            self.position -= self.velocity
+            self.rect.center = self.position
+
+        def copy_update(self):
+            offset = pygame.math.Vector2(0, self.size.y // 2 + self.parent.size.y // 2)
+            offset.rotate_ip(self.parent.angle)
+
+            self.angle = self.parent.angle
+            self.position = self.parent.position + offset
+            self.rect.center = self.position
+
+    class Motor(pygame.sprite.Sprite):
+        def __init__(self, name: str, stage, parent: pygame.sprite.Sprite, attribs: dict, group: pygame.sprite.Group, rocket: classmethod):
+            super().__init__(group)
+
+            self.name = name
+            self.parent = parent 
+            self.group = group
+            self.stage = stage
+
+            self.local_offset = attribs["local_offset"]
+            self.size = attribs["size"]
+            self.mass = attribs["mass"]
+            self.shape = attribs["shape"]
+            self.angle = 0
+            self.max_thrust = attribs["thrust"]
+            self.isp = attribs["isp"]
+            self.max_angle_vectoring = attribs["angle_vectoring"]
+
+            self.current_thrust_perc = 0
+
+            self.image = pygame.Surface(self.size, pygame.SRCALPHA)
+            self.image.fill("black")
+            self.rect = self.image.get_rect(topleft=rocket.WORLD_OFFSET+self.local_offset)
+
+            self.position = pygame.Vector2(self.rect.centerx, self.rect.centery)
+        
+        def render(self, screen):
+            rotated_image = pygame.transform.rotate(self.image, -self.angle)
+            rotated_rect = rotated_image.get_rect(center=self.position)
+            screen.blit(rotated_image, rotated_rect)
+
+        def copy_update(self):
+            offset = pygame.math.Vector2(0, self.size.y // 2 + self.parent.size.y // 2)
+            offset.rotate_ip(self.parent.angle)
+
+            self.angle = self.parent.angle
+            self.position = self.parent.position + offset
+            self.rect.center = self.position
+
+        def get_thrust(self):
+            return (self.current_thrust_perc/100)*self.max_thrust
+
+    def __init__(self, name_stage: str, rocket: classmethod):
+        super().__init__()
+
+        self.name = str(name_stage)
+        self.components_group = pygame.sprite.Group()
+        self.motor = None
+        self.attached = True
+        self.rocket = rocket
+
+        self.colliding = False
+
+    def render(self, screen):
+        for component in self.components_group:
+            component.render(screen)
+
+    def update(self, time_step):
+        if not self.colliding:
+            if self.attached:
+                first_stage = self.rocket.stages.sprites()[0]
+                # updating only the nose of the rocket
+                if self.name == first_stage.name:
+                    for component in self.components_group:
+                        if component.parent == None:
+                            # get current motor
+                            motor = None
+                            for stage in reversed(list(self.rocket.stages.sprites())):
+                                if stage.attached:
+                                    motor = stage.motor
+                                    break
             
-    def get_altitude(self, center_component_y):
-        return self.environment.base_terrain.y - center_component_y
-    
-    def get_aoa(self, component):
-        return abs(self.environment.get_wind_angle - component.angle) 
-    
+                            # get all the component
+                            components = []
+                            nose = None
+                            for stage in self.rocket.stages:
+                                for component in stage.components_group:
+                                    components.append(component)
+                                    if component.name == "nose": nose = component
+                            nose.update(motor, components, time_step, self.colliding)
+
+                        # copy the parent position for each component
+                        else:
+                            for component in self.components_group:
+                                if component.parent != None:
+                                    component.copy_update()
+                # update position of the current stage based on the parent position (the first one will be of the previous stage)
+                else: 
+                    for component in self.components_group:
+                        component.copy_update()
+            else:
+                # loop throught the component, the first component will update itself, the other components below it will follow their parent
+                for component in self.components_group.sprites():
+                    if component.name == self.components_group.sprites()[0].name:
+                        component.update(self.motor, self.components_group.sprites(), time_step, self.colliding)
+                    else:
+                        component.copy_update()
+
+    def detatch(self):
+        self.attached = False
+        self.motor.current_thrust_perc = 0
+
+    def collision(self):
+        if self.attached:  
+            for stage in self.rocket.stages:
+                stage.colliding = True
+        else:
+            self.colliding = True
+
+# motor not working in the new stage
+# there is a problem when rotating to the left, probably is the mass distribution and the CP or CG position (the x component)

@@ -98,7 +98,7 @@ class Simulation:
                         "color": "yellow",
                         "mass": 1000.0
                     },
-                    "motor": {
+                    "motor_1": {
                         "local_offset": pygame.Vector2(0, 100),
                         "size": pygame.Vector2(10, 20),
                         "shape": "cone",
@@ -117,7 +117,7 @@ class Simulation:
                         "color": "yellow",
                         "mass": 1000.0
                     },
-                    "motor": {
+                    "motor_2": {
                         "local_offset": pygame.Vector2(0, 100),
                         "size": pygame.Vector2(10, 20),
                         "shape": "cone",
@@ -189,9 +189,14 @@ class Simulation:
 
             self.screen.fill("white")
 
+            # timestep = self.clock.tick(60)/1000.0
+            # self.ROCKET.update(timestep, self.ENVIRONMENT.ground_sprites)
+            # self.ROCKET.controls()
             timestep = self.clock.tick(60)/1000.0
-            self.ROCKET.update(timestep, self.ENVIRONMENT.ground_sprites)
+            self.ROCKET.update(timestep)
             self.ROCKET.controls()
+            self.ROCKET.render(self.screen)
+            self.ROCKET.collision(self.ENVIRONMENT.ground_sprites)
 
             if self.track: 
                 self.CAMERA.render(self.ROCKET, self.ENVIRONMENT)
